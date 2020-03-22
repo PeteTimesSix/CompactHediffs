@@ -6,7 +6,7 @@
 	<supportedVersions>
 		<li>1.1</li>
 	</supportedVersions>
-	<url></url>
+	<url>https://github.com/PeteTimesSix/CompactHediffs</url>
 	<modDependencies>
       <li>
         <packageId>brrainz.harmony</packageId>
