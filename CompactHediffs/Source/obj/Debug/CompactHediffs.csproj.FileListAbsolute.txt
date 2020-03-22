@@ -8,3 +8,4 @@ C:\CompactHediffs\CompactHediffs\CompactHediffs\v1.1\Assemblies\PeteTimesSix.Com
 C:\CompactHediffs\CompactHediffs\CompactHediffs\Source\obj\Debug\CompactHediffs.csproj.CoreCompileInputs.cache
 C:\CompactHediffs\CompactHediffs\CompactHediffs\Source\obj\Debug\PeteTimesSix.CompactHediffs.dll
 C:\CompactHediffs\CompactHediffs\CompactHediffs\Source\obj\Debug\PeteTimesSix.CompactHediffs.pdb
+C:\CompactHediffs\CompactHediffs\CompactHediffs\Source\obj\Debug\CompactHediffs.csprojAssemblyReference.cache
