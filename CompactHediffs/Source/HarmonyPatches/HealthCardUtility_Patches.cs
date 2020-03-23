@@ -60,6 +60,7 @@ namespace PeteTimesSix.CompactHediffs.HarmonyPatches
             {
                 if (instruction.opcode == OpCodes.Ldc_R4 && instruction.operand is float && (float)instruction.operand == 0.375f)
                 {
+                    found = true;
                     MethodInfo method_GetAlteredMult = typeof(HealthCardUtility_DrawPawnHealthCard).GetMethod("GetAlteredMult");
                     yield return new CodeInstruction(OpCodes.Call, method_GetAlteredMult);
                 }
