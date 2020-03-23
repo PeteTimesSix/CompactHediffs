@@ -1,11 +1,5 @@
-C:\CompactHediffs\CompactHediffs\Macrocosm.Doomsday\v1.1\Assemblies\PeteTimesSix.CompactHediffs.dll
-C:\CompactHediffs\CompactHediffs\Macrocosm.Doomsday\v1.1\Assemblies\PeteTimesSix.CompactHediffs.pdb
-C:\CompactHediffs\CompactHediffs\Macrocosm.Doomsday\Source\obj\Debug\CompactHediffs.csprojAssemblyReference.cache
-C:\CompactHediffs\CompactHediffs\Macrocosm.Doomsday\Source\obj\Debug\PeteTimesSix.CompactHediffs.dll
-C:\CompactHediffs\CompactHediffs\Macrocosm.Doomsday\Source\obj\Debug\PeteTimesSix.CompactHediffs.pdb
 C:\CompactHediffs\CompactHediffs\CompactHediffs\v1.1\Assemblies\PeteTimesSix.CompactHediffs.dll
 C:\CompactHediffs\CompactHediffs\CompactHediffs\v1.1\Assemblies\PeteTimesSix.CompactHediffs.pdb
 C:\CompactHediffs\CompactHediffs\CompactHediffs\Source\obj\Debug\CompactHediffs.csproj.CoreCompileInputs.cache
 C:\CompactHediffs\CompactHediffs\CompactHediffs\Source\obj\Debug\PeteTimesSix.CompactHediffs.dll
 C:\CompactHediffs\CompactHediffs\CompactHediffs\Source\obj\Debug\PeteTimesSix.CompactHediffs.pdb
-C:\CompactHediffs\CompactHediffs\CompactHediffs\Source\obj\Debug\CompactHediffs.csprojAssemblyReference.cache

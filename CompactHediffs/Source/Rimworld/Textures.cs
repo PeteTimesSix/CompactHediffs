@@ -17,8 +17,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
         public static readonly Texture2D CategorizedResourceReadout = ContentFinder<Texture2D>.Get("UI/Buttons/ResourceReadoutCategorized", true);
 
         public static readonly Texture2D TestTexture = ContentFinder<Texture2D>.Get("testTexture", true);
-
-        public static readonly Texture2D InfoButton = ContentFinder<Texture2D>.Get("info", true);
+         
         public static readonly Texture2D InfoButtonNarrow = ContentFinder<Texture2D>.Get("infoNarrow", true);
 
         public static readonly Texture2D BleedingIcon_Vanilla = ContentFinder<Texture2D>.Get("UI/Icons/Medical/Bleeding", true);
