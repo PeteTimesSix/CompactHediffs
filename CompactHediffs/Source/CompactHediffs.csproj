@@ -310,6 +310,8 @@
     <Compile Include="Rimworld\SettingsMenuPreview_NOPE.cs" />
     <Compile Include="Rimworld\Textures.cs" />
     <Compile Include="Rimworld\UI\CustomInfoCardButtonWidget.cs" />
+    <Compile Include="Rimworld\UI\Listing_StandardExtensions.cs" />
+    <Compile Include="Rimworld\UI\Widgets_Custom.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Install.bat" />
