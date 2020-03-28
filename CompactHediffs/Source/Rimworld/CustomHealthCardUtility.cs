@@ -455,7 +455,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 			var tendDurationComp = hediff.TryGetComp<HediffComp_TendDuration>();
 			var immunizableComp = hediff.TryGetComp<HediffComp_Immunizable>();
-			bool hasImmunity = immunizableComp != null;
+			bool hasImmunity = immunizableComp != null && immunizableComp.Immunity > 0.001f;
 			bool hasSeverity = severityFraction > 0.001f;
 			float immunityFraction = hasImmunity ? immunizableComp.Immunity : 0;
 
@@ -559,7 +559,6 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					severityColor.a *= 0.65f;
 					immunityColor.a *= 0.65f;
 				}
-
 
 				if(commonRect.HasValue)
 				{
