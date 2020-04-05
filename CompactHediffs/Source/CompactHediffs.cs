@@ -16,6 +16,8 @@ namespace PeteTimesSix.CompactHediffs
     public class CompactHediffsMod : Mod
     {
         public static CompactHediffs_Settings settings;
+        public static bool pawnmorpherLoaded = false;
+        public static bool eliteBionicsLoaded = false;
 
         public CompactHediffsMod(ModContentPack content) : base(content)
         {
@@ -23,6 +25,9 @@ namespace PeteTimesSix.CompactHediffs
 
             var harmony = new Harmony("PeteTimesSix.CompactHediffs");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+            pawnmorpherLoaded = ModLister.GetActiveModWithIdentifier("tachyonite.pawnmorpher") != null;
+            eliteBionicsLoaded = ModLister.GetActiveModWithIdentifier("V1024.EBFramework") != null;
         }
 
         public override string SettingsCategory()

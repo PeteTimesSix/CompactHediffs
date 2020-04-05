@@ -21,13 +21,13 @@ namespace PeteTimesSix.CompactHediffs.HarmonyPatches
         {
             singletonRef = __instance;
             field_size = Traverse.Create(singletonRef).Field<Vector2>("size");
-            setNewExtraWidth(CompactHediffsMod.settings.extraTabWidth);
+            setNewExtraSize(CompactHediffsMod.settings.extraTabWidth, CompactHediffsMod.settings.extraTabHeight);
         }
 
-        public static void setNewExtraWidth(float newExtraWidth)
+        public static void setNewExtraSize(float newExtraWidth, float newExtraHeight)
         {
             if(field_size != null)
-                field_size.Value = new Vector2(630f + newExtraWidth, 430f);
+                field_size.Value = new Vector2(630f + newExtraWidth, 430f + newExtraHeight);
         }
     }
 }

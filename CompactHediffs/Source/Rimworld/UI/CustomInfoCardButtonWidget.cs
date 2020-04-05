@@ -11,11 +11,11 @@ namespace PeteTimesSix.CompactHediffs.Rimworld.UI
 {
     public static class CustomInfoCardButtonWidget
     {
-		public static bool CustomInfoCardButton(Rect rect, Def def)
+		public static bool CustomInfoCardButton(Rect rect, Hediff hediff)
 		{
 			if (CustomInfoCardButtonWorker(rect))
 			{
-				Find.WindowStack.Add(new Dialog_InfoCard(def));
+				Find.WindowStack.Add(new Dialog_InfoCard(hediff.def));
 				return true;
 			}
 			return false;

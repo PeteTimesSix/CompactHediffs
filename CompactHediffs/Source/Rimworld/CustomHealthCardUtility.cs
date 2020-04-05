@@ -23,9 +23,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 		public static readonly Color StaticHighlightColor = new Color(0.75f, 0.75f, 0.85f, 1f);
 		public static readonly Color CyanWhite = new Color(0.8f, 1.0f, 1.0f, 1f);
 		public static readonly Color BluishGreen = new Color(0.0f, 1.0f, 0.4f, 1f);
+		public static readonly Color MissingBodyPart = new Color(0.15f, 0.0f, 0.0f, 1f);
 
-		public static readonly float IconSize = 20f;
-		private static Traverse<float> field_lastMaxIconsTotalWidth;
+		public static readonly int IconHeight = 20;
+		public static readonly int BleedIconWidth = 15;
+		public static readonly int TendIconWidth = 15;
+		public static readonly int InfoIconWidth = 10;
+
+		//private static Traverse<float> field_lastMaxIconsTotalWidth;
 		//private static Traverse<float> field_scrollViewHeight;
 		//private static Traverse<Vector2> field_scrollPosition;
 		private static Traverse<bool> field_highlight;
@@ -35,9 +40,12 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 		private static Traverse method_GetTooltip;
 		private static Traverse method_getListPriority;
 
+		private static Traverse method_pawnmorpher_Tooltip;
+		private static Traverse method_eliteBionics_GetMaxHealth;
+
 		static CustomHealthCardUtility() 
 		{
-			field_lastMaxIconsTotalWidth = Traverse.Create(typeof(HealthCardUtility)).Field<float>("lastMaxIconsTotalWidth");
+			//field_lastMaxIconsTotalWidth = Traverse.Create(typeof(HealthCardUtility)).Field<float>("lastMaxIconsTotalWidth");
 			//field_scrollViewHeight = Traverse.Create(typeof(HealthCardUtility)).Field<float>("scrollViewHeight");
 			//field_scrollPosition = Traverse.Create(typeof(HealthCardUtility)).Field<Vector2>("scrollPosition");
 			field_highlight = Traverse.Create(typeof(HealthCardUtility)).Field<bool>("highlight");
@@ -47,6 +55,16 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			method_EntryClicked = Traverse.Create(typeof(HealthCardUtility)).Method("EntryClicked", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn) });
 			method_GetTooltip = Traverse.Create(typeof(HealthCardUtility)).Method("GetTooltip", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn), typeof(BodyPartRecord) });
 			method_getListPriority = Traverse.Create(typeof(HealthCardUtility)).Method("GetListPriority", new Type[] { typeof(BodyPartRecord) });
+
+			if (CompactHediffsMod.pawnmorpherLoaded)
+			{
+				method_pawnmorpher_Tooltip = Traverse.CreateWithType("Pawnmorph.PatchHealthCardUtilityDrawHediffRow")?.Method("Tooltip", new Type[] { typeof(IEnumerable<Hediff>) });
+			}
+			if (CompactHediffsMod.eliteBionicsLoaded)
+			{
+				//for the record, Vectorial1024, this is really rather rude.
+				method_eliteBionics_GetMaxHealth = Traverse.CreateWithType("EBF.VanillaExtender")?.Method("GetMaxHealth", new Type[] { typeof(BodyPartDef), typeof(Pawn), typeof(BodyPartRecord) });
+			}
 		}
 
 		public static Hediff GetReplacingPart(IEnumerable<Hediff> diffs, BodyPartRecord part) 
@@ -61,16 +79,17 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				{
 					Def def = diff.def;
 
-					var traverse = Traverse.Create(def).Property("IsCoreMutation");
-					if (traverse.PropertyExists())
+					//var traverse = Traverse.Create(diff);
+					var property_IsCoreMutation = Traverse.Create(diff).Property("IsCoreMutation");
+					if (property_IsCoreMutation.PropertyExists())
 					{
-						if(traverse.GetValue<bool>())
+						if (property_IsCoreMutation.GetValue<bool>())
 							return diff;
 					}
 					else
 					{
-						//TODO: Remove this when Pawnmorpher updates
 						List<BodyPartDef> parts = Traverse.Create(def)?.Field<List<BodyPartDef>>("parts")?.Value;
+						//TODO: Remove this when Pawnmorpher updates
 						if (parts != null && parts.Count == 1 && parts[0] == part.def) //making an assumption here...
 							return diff;
 					}
@@ -82,11 +101,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 		public static void DrawHediffRow(Rect rowRect, Pawn pawn, IEnumerable<Hediff> diffs, ref float curY)
 		{
+			rowRect = rowRect.Rounded();
+			int currentY = (int) curY;
+
 			var settings = CompactHediffsMod.settings;
 
 
-			float column_bodypartWidth = (rowRect.width * 0.375f);
-			float column_hediffLabelWidth = rowRect.width - column_bodypartWidth - field_lastMaxIconsTotalWidth.Value;
+			int column_bodypartWidth = (int)(rowRect.width * 0.375f);
+			//int column_hediffLabelWidth = (int)(rowRect.width - column_bodypartWidth - field_lastMaxIconsTotalWidth.Value);
 
 			BodyPartRecord part = diffs.First<Hediff>().Part;
 			Hediff replacingPart = null;
@@ -126,35 +148,45 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 			bodyPartText = bodyPartText.CapitalizeFirstNestingAware();
 
-			float bodypartLabelWidth = column_bodypartWidth - IconSize / 2f;
-			float bodyPartLabelHeight = Text.CalcHeight(bodyPartText, bodypartLabelWidth);
-			float hediffTotalHeight = 0f;
+			int bodypartLabelWidth = (int) (column_bodypartWidth - IconHeight / 2f);
+			int bodyPartLabelHeight = (int) (Text.CalcHeight(bodyPartText, bodypartLabelWidth));
+			int hediffTotalHeight = 0;
 
-			List<IGrouping<int, Hediff>> groupings;
+			List<IGrouping<HediffDef, Hediff>> groupings;
 			if (replacingPart == null)
 			{
 				if (settings.tendPrioritySort)
-					groupings = diffs.OrderByDescending(i => i.TendableNow(true) ? i.TendPriority : -1).GroupBy(x => x.UIGroupKey).ToList();
+					groupings = diffs.OrderByDescending(i => i.TendableNow(true) ? i.TendPriority : -1).GroupBy(x => x.def).ToList();
 				else
-					groupings = diffs.GroupBy(x => x.UIGroupKey).ToList();
+					groupings = diffs.GroupBy(x => x.def).ToList();
 			}
 			else
 			{
 				if (settings.tendPrioritySort)
-					groupings = diffs.Where(x => x != replacingPart).OrderByDescending(i => i.TendableNow(true) ? i.TendPriority : -1).GroupBy(x => x.UIGroupKey).ToList();
+					groupings = diffs.Where(x => x != replacingPart).OrderByDescending(i => i.TendableNow(true) ? i.TendPriority : -1).GroupBy(x => x.def).ToList();
 				else
-					groupings = diffs.Where(x => x != replacingPart).GroupBy(x => x.UIGroupKey).ToList();
+					groupings = diffs.Where(x => x != replacingPart).GroupBy(x => x.def).ToList();
 			}
 
 			for (int i = 0; i < groupings.Count; i++)
 			{
-				IGrouping<int, Hediff> grouping = groupings[i];
-				string text = grouping.First<Hediff>().LabelCap;
-				if (grouping.Count<Hediff>() != 1)
+				IGrouping<HediffDef, Hediff> grouping = groupings[i];
+				string hediffLabel = GenLabelForHediffGroup(grouping);
+				Hediff representativeHediff = grouping.First();
+				//string hediffLabel = representativeHediff.LabelCap;
+				if (grouping.Count() > 1)
 				{
-					text = text + " x" + grouping.Count<Hediff>().ToString();
+					hediffLabel = hediffLabel + " x" + grouping.Count().ToString();
 				}
-				hediffTotalHeight += Text.CalcHeight(text, column_hediffLabelWidth);
+				if (settings.italicizeMissing && representativeHediff.def == HediffDefOf.MissingBodyPart)
+				{
+					hediffLabel = hediffLabel.ApplyTag("i");
+				}
+
+				int iconsWidth = CalcIconsWidthForGrouping(grouping);
+				int hediffLabelWidth = (int) (rowRect.width - (column_bodypartWidth + iconsWidth));
+
+				hediffTotalHeight += (int) (Text.CalcHeight(hediffLabel, hediffLabelWidth));
 
 				if (settings.internalSeparator && i < groupings.Count - 1)
 					hediffTotalHeight += settings.internalSeparatorHeight;
@@ -186,10 +218,10 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				}
 			}
 
-			var totalHeight = Mathf.Max(bodyPartLabelHeight, hediffTotalHeight);
+			int totalHeight = Math.Max(bodyPartLabelHeight, hediffTotalHeight);
 			if (settings.horizontalSeparator)
 				totalHeight += settings.horizontalSeparatorHeight;
-			Rect wholeEntryRect = new Rect(0f, curY, rowRect.width, totalHeight);
+			Rect wholeEntryRect = new Rect(0f, currentY, rowRect.width, totalHeight).Rounded();
 
 			if (settings.evenOddHighlights)
 			{
@@ -201,28 +233,28 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			if (settings.verticalSeparator)
 			{
 				GUI.color = separatorColor;
-				Rect verticalSeparatorRect = new Rect(column_bodypartWidth, curY, settings.verticalSeparatorWidth, totalHeight);
+				Rect verticalSeparatorRect = new Rect(column_bodypartWidth, currentY, settings.verticalSeparatorWidth, totalHeight).Rounded();
 				GUI.DrawTexture(verticalSeparatorRect, TexUI.FastFillTex);
 			}
 
 			if (settings.horizontalSeparator)
 			{
 				GUI.color = separatorColor;
-				Rect horizontalSeparatorRect = new Rect(0, curY, rowRect.width, settings.horizontalSeparatorHeight);
+				Rect horizontalSeparatorRect = new Rect(0, currentY, rowRect.width, settings.horizontalSeparatorHeight).Rounded();
 				GUI.DrawTexture(horizontalSeparatorRect, TexUI.FastFillTex);
-				curY += settings.horizontalSeparatorHeight;
+				currentY += settings.horizontalSeparatorHeight;
 			}
 
 
 			if (settings.bodypartHealthbars)
 			{
-				Rect fullHealthPercentageRect = new Rect(0, curY, column_bodypartWidth, settings.healthBarHeight);
+				Rect fullHealthPercentageRect = new Rect(0, currentY, column_bodypartWidth, settings.healthBarHeight).Rounded();
 
 				if (part != null)
 				{
 					Color healthColor = GetHealthColorForBodypart(pawn, part);
-					float partHealthFraction;
-					partHealthFraction = pawn.health.hediffSet.GetPartHealth(part) / part.def.GetMaxHealth(pawn);
+					float partMaxHealth = getPartMaxHealth(pawn, part); 
+					float partHealthFraction = pawn.health.hediffSet.GetPartHealth(part) / partMaxHealth;
 
 					if (partHealthFraction < 1f)
 					{
@@ -230,13 +262,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 						GUI.DrawTexture(fullHealthPercentageRect, Textures.translucentWhite);
 						if (partHealthFraction == 0)
 						{
-							GUI.color = Color.black;
+							GUI.color = MissingBodyPart;
+							//GUI.color = Color.black;
 							GUI.DrawTexture(fullHealthPercentageRect, TexUI.FastFillTex);
 						}
 						else
 						{
 							GUI.color = healthColor;
-							Rect healthPercentageRect = new Rect(0, curY, column_bodypartWidth * partHealthFraction, settings.healthBarHeight);
+							Rect healthPercentageRect = new Rect(0, currentY, column_bodypartWidth * partHealthFraction, settings.healthBarHeight);
 							GUI.DrawTexture(healthPercentageRect, Textures.translucentWhite);
 						}
 
@@ -251,74 +284,74 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 			if (part == null)
 			{
-				Widgets.Label(new Rect(0f, curY, bodypartLabelWidth, 100f), bodyPartText);
+				Widgets.Label(new Rect(0f, currentY, bodypartLabelWidth, 100f), bodyPartText);
 			}
 			else
 			{
-				Widgets.Label(new Rect(0f, curY, bodypartLabelWidth, 100f), bodyPartText);
+				Widgets.Label(new Rect(0f, currentY, bodypartLabelWidth, 100f), bodyPartText);
 				if (replacingPart != null)
 				{
 					GUI.color = Color.white;
-					float iconOffset = Math.Max((bodyPartLabelHeight - IconSize) / 2f, 0);
-					Rect iconRect = new Rect(bodypartLabelWidth, curY + iconOffset, IconSize / 2f, IconSize);
-					CustomInfoCardButtonWidget.CustomInfoCardButton(iconRect, replacingPart.def);
+					int iconOffset = (int) Math.Max((bodyPartLabelHeight - IconHeight) / 2f, 0);
+					Rect iconRect = new Rect(bodypartLabelWidth, currentY + iconOffset, IconHeight / 2f, IconHeight).Rounded();
+					CustomInfoCardButtonWidget.CustomInfoCardButton(iconRect, replacingPart);
 				}
 			}
 
-			float innerY = 0;
+			int innerY = 0;
 
 			GUI.color = Color.white;
 
 			for (int i = 0; i < groupings.Count; i++)
 			{
-				IGrouping<int, Hediff> grouping = groupings[i];
+				IGrouping<HediffDef, Hediff> grouping = groupings[i];
+				string hediffLabel = GenLabelForHediffGroup(grouping);
 				var hediffsByPriority = grouping.OrderByDescending(x => x.TendableNow(true) ? x.TendPriority : -1);
 
-				int postGroupingCount = 0;
-				Hediff hediff = null;
-				TextureAndColor stateIcon = null;
-				float stateSeverity = 0f;
-				float totalBleedRate = 0f;
-				foreach (Hediff hediff2 in hediffsByPriority)
+				//TextureAndColor stateIcon = null;
+				//float stateSeverity = 0f;
+				//float totalBleedRate = 0f;
+				/*foreach (Hediff heddif in hediffsByPriority)
 				{
-					if (postGroupingCount == 0)
-					{
-						hediff = hediff2;
-					}
-
-					stateIcon = hediff2.StateIcon;
-					if (hediff2.def.lethalSeverity > 0f)
-						stateSeverity = hediff2.Severity / hediff2.def.lethalSeverity;
+					stateIcon = heddif.StateIcon;
+					if (heddif.def.lethalSeverity > 0f)
+						stateSeverity = heddif.Severity / heddif.def.lethalSeverity;
 					else
 						stateSeverity = -1f;
 
-					totalBleedRate += hediff2.BleedRate;
-					postGroupingCount++;
-				}
-				string heddifLabel = hediff.LabelCap;
-				if (settings.italicizeMissing && hediff is Hediff_MissingPart)
+					totalBleedRate += heddif.BleedRate;
+				}*/
+
+				Hediff representativeHediff = grouping.First();
+				//string hediffLabel = representativeHediff.LabelCap;
+				if (grouping.Count() > 1)
 				{
-					heddifLabel = heddifLabel.ApplyTag("i");
+					hediffLabel = hediffLabel + " x" + grouping.Count().ToString();
 				}
-
-
-				if (postGroupingCount != 1)
+				if (settings.italicizeMissing && representativeHediff.def == HediffDefOf.MissingBodyPart)
 				{
-					heddifLabel = heddifLabel + " x" + postGroupingCount.ToStringCached();
+					hediffLabel = hediffLabel.ApplyTag("i");
 				}
-				float hediffTextHeight = Text.CalcHeight(heddifLabel, column_hediffLabelWidth);
+
+				int iconsWidth = CalcIconsWidthForGrouping(grouping);
+				int hediffLabelWidth = (int)(rowRect.width - (column_bodypartWidth + iconsWidth));
+
+				int hediffTextHeight = (int) Text.CalcHeight(hediffLabel, hediffLabelWidth);
 
 
-				float hediffColumnWidth = (rowRect.width - column_bodypartWidth);
+				int hediffColumnWidth = (int) (rowRect.width - column_bodypartWidth);
 
-				if (settings.severityBarMode != CompactHediffs_Settings.SeverityBarMode.Off)
+				if (settings.severityBarMode != CompactHediffs_Settings.SeverityBarMode.Off && settings.severityBarsPosition == CompactHediffs_Settings.BarPosition.Above)
 				{
-					Rect barRect = new Rect(column_bodypartWidth, curY + innerY, hediffColumnWidth, settings.internalBarHeight).Rounded();
-					innerY += DrawSeverityBar(settings, barRect, hediff);
+					foreach(Hediff hediff in grouping)
+					{
+						Rect barRect = new Rect(column_bodypartWidth, currentY + innerY, hediffColumnWidth, settings.internalBarHeight).Rounded();
+						innerY += DrawSeverityBar(settings, barRect, hediff);
+					}
 				}
 
-				Rect fullHediffRect = new Rect(column_bodypartWidth, curY + innerY, rowRect.width - column_bodypartWidth, hediffTextHeight);
-				Rect hediffLabelrect = new Rect(column_bodypartWidth + 2f, curY + innerY, column_hediffLabelWidth - 2f, hediffTextHeight);
+				Rect fullHediffRect = new Rect(column_bodypartWidth, currentY + innerY, rowRect.width - column_bodypartWidth, hediffTextHeight).Rounded();
+				Rect hediffLabelrect = new Rect(column_bodypartWidth, currentY + innerY, hediffLabelWidth, hediffTextHeight).Rounded();
 				
 				/*if (tendDurationComp != null)
 				{
@@ -348,78 +381,120 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					}
 				}*/
 
-				GUI.color = hediff.LabelColor;
-				Widgets.Label(hediffLabelrect, heddifLabel);
+				GUI.color = representativeHediff.LabelColor;
+				Widgets.Label(hediffLabelrect, hediffLabel);
 				GUI.color = Color.white;
 
-				float widthAccumulator = 0;
+				int widthAccumulator = 0;
 
-				float iconOffset = Math.Max((fullHediffRect.height - IconSize) / 2f, 0);
-				foreach (HediffDef localHediffDef in hediffsByPriority.Select((Hediff h) => h.def).Distinct<HediffDef>())
+				int iconOffset = (int) Math.Max((fullHediffRect.height - IconHeight) / 2f, 0);
+
+				//foreach (Hediff localHediff in hediffsByPriority)
 				{
-					Rect iconRect = new Rect(rowRect.width - (IconSize / 2f), fullHediffRect.y + iconOffset, IconSize / 2f, IconSize);
-					CustomInfoCardButtonWidget.CustomInfoCardButton(iconRect, localHediffDef);
-					widthAccumulator += iconRect.width;
+					Rect iconRect = new Rect(rowRect.width - (IconHeight / 2f), fullHediffRect.y + iconOffset, IconHeight / 2f, IconHeight).Rounded();
+					CustomInfoCardButtonWidget.CustomInfoCardButton(iconRect, representativeHediff);
+					widthAccumulator += (int) iconRect.width;
 				}
-				if (totalBleedRate > 0f)
-				{
-					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + IconSize), fullHediffRect.y + iconOffset, IconSize, IconSize);
 
-					if (settings.bleedingIcons)
-					{
-						float brightnessPulse = Pulser.PulseBrightness(totalBleedRate, 0.25f);
-						GUI.color = new Color(1f, 1f, 1f, brightnessPulse);
-
-						Texture bleedIcon;
-						if (totalBleedRate <= 0.1)
-							bleedIcon = Textures.BleedingIcon_0;
-						else if (totalBleedRate < 0.25)
-							bleedIcon = Textures.BleedingIcon_1;
-						else if (totalBleedRate < 0.5)
-							bleedIcon = Textures.BleedingIcon_2;
-						else if (totalBleedRate < 1.5)
-							bleedIcon = Textures.BleedingIcon_3;
-						else if (totalBleedRate < 2.5)
-							bleedIcon = Textures.BleedingIcon_4;
-						else
-							bleedIcon = Textures.BleedingIcon_5;
-
-						GUI.DrawTexture(iconRect, bleedIcon);
-					}
-					else
-					{
-						GUI.DrawTexture(iconRect.ContractedBy(GenMath.LerpDouble(0f, 0.6f, 5f, 0f, Mathf.Min(totalBleedRate, 1f))), Textures.BleedingIcon_Vanilla);
-					}
-
-					widthAccumulator += iconRect.width;
-				}
-				if (stateIcon.HasValue)
+				/*if (stateIcon.HasValue)
 				{
 					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + IconSize), fullHediffRect.y + iconOffset, IconSize, IconSize);
 					GUI.color = stateIcon.Color;
-					if(stateSeverity >= 0)
-						GUI.DrawTexture(iconRect.ContractedBy(GenMath.LerpDouble(0f, 1f, IconSize / 6f, 0f, Mathf.Min(totalBleedRate, 1f))), stateIcon.Texture);
+					if (stateSeverity >= 0)
+						GUI.DrawTexture(iconRect.ContractedBy(GenMath.LerpDouble(0f, 1f, IconSize / 6f, 0f, Mathf.Min(stateSeverity, 1f))), stateIcon.Texture);
 					else
 						GUI.DrawTexture(iconRect.ContractedBy(IconSize / 6f), stateIcon.Texture);
 
 					widthAccumulator += iconRect.width;
+				}*/
+
+				var hediffsWithStateIcon = hediffsByPriority.Where(x => x.StateIcon.HasValue);
+				//draw non-injury icons first
+				foreach (Hediff localHediff in hediffsWithStateIcon.Where(x => x.StateIcon.Texture != Textures.Vanilla_TendedIcon_Well_Injury))
+				{
+					var hediffStateIcon = localHediff.StateIcon;
+					GUI.color = hediffStateIcon.Color;
+					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + IconHeight), fullHediffRect.y + iconOffset, IconHeight, IconHeight).Rounded();
+					GUI.DrawTexture(iconRect, hediffStateIcon.Texture);
+					widthAccumulator += (int)iconRect.width;
+				}
+				//draw tended injuries
+				foreach (Hediff localHediff in hediffsWithStateIcon.Where(x => x.StateIcon.Texture == Textures.Vanilla_TendedIcon_Well_Injury).OrderByDescending(x => x.TryGetComp<HediffComp_TendDuration>().tendQuality))
+				{
+					var hediffStateIcon = localHediff.StateIcon;
+					GUI.color = hediffStateIcon.Color;
+					Rect iconRect;
+					if (settings.tendingIcons)
+					{
+						iconRect = new Rect(rowRect.width - (widthAccumulator + TendIconWidth), fullHediffRect.y + iconOffset, TendIconWidth, IconHeight).Rounded();
+						DrawCustomTendingIcon(iconRect, localHediff);
+					}
+					else
+					{
+						iconRect = new Rect(rowRect.width - (widthAccumulator + IconHeight), fullHediffRect.y + iconOffset, IconHeight, IconHeight).Rounded();
+						GUI.DrawTexture(iconRect, hediffStateIcon.Texture);
+					}
+					widthAccumulator += (int)iconRect.width;
+				}
+				//draw bleeding injuries
+				GUI.color = Color.white;
+				foreach (Hediff localHediff in hediffsByPriority.Where(x => x.Bleeding).OrderByDescending(x => x.BleedRate)) 
+				{
+					if (localHediff.Bleeding)
+					{
+						Rect iconRect;
+						if (settings.bleedingIcons)
+						{
+							iconRect = new Rect(rowRect.width - (widthAccumulator + BleedIconWidth), fullHediffRect.y + iconOffset, BleedIconWidth, IconHeight).Rounded();
+							DrawCustomBleedIcon(iconRect, localHediff);
+						}
+						else
+						{
+							iconRect = new Rect(rowRect.width - (widthAccumulator + IconHeight), fullHediffRect.y + iconOffset, IconHeight, IconHeight).Rounded();
+							GUI.DrawTexture(iconRect.ContractedBy(GenMath.LerpDouble(0f, 0.6f, 5f, 0f, Mathf.Min(localHediff.BleedRate, 1f))), Textures.Vanilla_BleedingIcon);
+						}
+						widthAccumulator += (int) iconRect.width;
+					}
+					else
+					{
+						break;
+					}
 				}
 
-				field_lastMaxIconsTotalWidth.Value = widthAccumulator; 
+				/*if (totalBleedRate > 0f)
+				{
+					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + IconSize), fullHediffRect.y + iconOffset, IconSize, IconSize);
+
+					DrawBleedIcon(iconRect, );
+
+					widthAccumulator += iconRect.width;
+				}*/
+				//field_lastMaxIconsTotalWidth.Value = Math.Max(widthAccumulator, field_lastMaxIconsTotalWidth.Value); 
 				innerY += hediffTextHeight;
 
+				if (settings.severityBarMode != CompactHediffs_Settings.SeverityBarMode.Off && settings.severityBarsPosition == CompactHediffs_Settings.BarPosition.Below)
+				{
+					foreach (Hediff hediff in grouping)
+					{
+						Rect barRect = new Rect(column_bodypartWidth, currentY + innerY, hediffColumnWidth, settings.internalBarHeight).Rounded();
+						int extraHeight = DrawSeverityBar(settings, barRect, hediff);
+						innerY += extraHeight;
+						fullHediffRect.height += extraHeight;
+					}
+				}
 
 				if (settings.internalSeparator && i < groupings.Count - 1)
 				{
-					Rect internalSeparatorRect = new Rect(column_bodypartWidth, curY + innerY, (rowRect.width - column_bodypartWidth), settings.internalSeparatorHeight);
+					Rect internalSeparatorRect = new Rect(column_bodypartWidth, currentY + innerY, (rowRect.width - column_bodypartWidth), settings.internalSeparatorHeight).Rounded();
 					GUI.color = separatorColor;
 					GUI.DrawTexture(internalSeparatorRect, TexUI.FastFillTex);
 					innerY += settings.internalSeparatorHeight;
+					fullHediffRect.height += settings.internalSeparatorHeight;
 				}
 
 			}
 			GUI.color = Color.white;
-			curY += Mathf.Max(bodyPartLabelHeight, hediffTotalHeight);
+			currentY += Math.Max(bodyPartLabelHeight, hediffTotalHeight);
 
 
 			if (pawn != null)
@@ -430,19 +505,125 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				}
 				if (Mouse.IsOver(wholeEntryRect))
 				{
-					TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => method_GetTooltip.GetValue<string>(diffs, pawn, part), (int)curY + 7857));
+					TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => method_GetTooltip.GetValue<string>(diffs, pawn, part), (int)currentY + 7857));
+					if (CompactHediffsMod.pawnmorpherLoaded)
+					{
+						//copied from Pawnmorph.PatchHealthCardUtilityDrawHediffRow
+						string tooltip = method_pawnmorpher_Tooltip.GetValue<string>(diffs);
+						if(tooltip != "")
+							TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => tooltip, (int)currentY + 117857));
+					}
 				}
 			}
+
+			curY = (float) currentY;
 		}
 
-		private static float DrawSeverityBar(CompactHediffs_Settings settings, Rect barRect, Hediff hediff)
+		private static float getPartMaxHealth(Pawn pawn, BodyPartRecord part)
+		{
+			if (!CompactHediffsMod.eliteBionicsLoaded)
+				return part.def.GetMaxHealth(pawn);
+			else
+				return method_eliteBionics_GetMaxHealth.GetValue<float>(part.def, pawn, part);
+		}
+
+		private static int CalcIconsWidthForGrouping(IGrouping<HediffDef, Hediff> grouping)
+		{
+			int iconsWidth = InfoIconWidth;
+			foreach (Hediff diff in grouping)
+			{
+				if (diff.StateIcon.HasValue)
+				{
+					if (CompactHediffsMod.settings.tendingIcons && diff.StateIcon.Texture == Textures.Vanilla_TendedIcon_Well_General)
+						iconsWidth += TendIconWidth;
+					else
+						iconsWidth += IconHeight;
+				}
+				if (diff.Bleeding)
+				{
+					if (CompactHediffsMod.settings.bleedingIcons)
+						iconsWidth += BleedIconWidth;
+					else
+						iconsWidth += IconHeight;
+				}
+			}
+			return iconsWidth;
+		}
+
+		private static string GenLabelForHediffGroup(IGrouping<HediffDef, Hediff> grouping)
+		{
+			string fullLabel = grouping.First().LabelCap;
+			bool mismatch = false;
+			foreach(Hediff hediff in grouping) 
+			{
+				if(hediff.LabelCap != fullLabel)
+				{
+					mismatch = true;
+					break;
+				}
+			}
+			if (!mismatch)
+				return fullLabel;
+			else
+				return grouping.First().LabelBaseCap;
+		}
+
+		private static void DrawCustomTendingIcon(Rect iconRect, Hediff hediff)
+		{
+			float quality = hediff.TryGetComp<HediffComp_TendDuration>().tendQuality;
+			Texture tendIcon;
+			if (quality <= 0.01)
+			{
+				tendIcon = Textures.TendingIcon_0;
+				//GUI.color = Color.white;
+			}
+			else if (quality <= 0.25)
+				tendIcon = Textures.TendingIcon_1;
+			else if (quality < 0.5)
+				tendIcon = Textures.TendingIcon_2;
+			else if (quality < 0.75)
+				tendIcon = Textures.TendingIcon_3;
+			else if(quality < 1.0)
+				tendIcon = Textures.TendingIcon_4;
+			else
+				tendIcon = Textures.TendingIcon_5;
+
+			GUI.DrawTexture(iconRect, tendIcon);
+		}
+
+
+
+		private static void DrawCustomBleedIcon(Rect iconRect, Hediff hediff)
+		{
+			float bleedRate = hediff.BleedRate;
+			float brightnessPulse = Pulser.PulseBrightness(bleedRate, 0.25f);
+			GUI.color = new Color(1f, 1f, 1f, brightnessPulse);
+
+			Texture bleedIcon;
+			if (bleedRate <= 0.1)
+				bleedIcon = Textures.BleedingIcon_0;
+			else if (bleedRate < 0.25)
+				bleedIcon = Textures.BleedingIcon_1;
+			else if (bleedRate < 0.5)
+				bleedIcon = Textures.BleedingIcon_2;
+			else if (bleedRate < 1.25)
+				bleedIcon = Textures.BleedingIcon_3;
+			else if (bleedRate < 2.25)
+				bleedIcon = Textures.BleedingIcon_4;
+			else
+				bleedIcon = Textures.BleedingIcon_5;
+
+			GUI.DrawTexture(iconRect, bleedIcon);
+		}
+
+		private static int DrawSeverityBar(CompactHediffs_Settings settings, Rect barRect, Hediff hediff)
 		{
 			if (settings.severityBarMode == CompactHediffs_Settings.SeverityBarMode.Off)
-				return 0f;
+				return 0;
 
 			bool showsSeverity = hediff.SeverityLabel != null;
 			if (!settings.showHiddenProgressConditions && !showsSeverity)
- 				return 0f;
+ 				return 0;
 
 			float maxSeverity = -1;
 			if (hediff.def.lethalSeverity > 0f)
@@ -507,14 +688,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 							}
 							if (hasImmunity)
 							{
-								var severityWidth = (barRect.width / 2f) * severityFraction;
+								int severityWidth = (int) ((barRect.width / 2f) * severityFraction);
 								severityRect = new Rect(barRect.x, barRect.y, severityWidth, settings.internalBarHeight).Rounded();
-								var immunityWidth = (barRect.width / 2f) * immunityFraction;
+								int immunityWidth = (int) ((barRect.width / 2f) * immunityFraction);
 								immunityRect = new Rect(barRect.x + (barRect.width - immunityWidth), barRect.y, immunityWidth, settings.internalBarHeight).Rounded();
 							}
 							else
 							{
-								var severityWidth = (barRect.width / 2f) * severityFraction;
+								int severityWidth = (int) ((barRect.width / 2f) * severityFraction);
 								severityRect = new Rect(barRect.x, barRect.y, severityWidth, settings.internalBarHeight).Rounded();
 								severityRectMirror = new Rect(barRect.x + (barRect.width - severityWidth), barRect.y, severityWidth, settings.internalBarHeight).Rounded();
 							}
@@ -529,14 +710,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 							}
 							if (hasImmunity)
 							{
-								var severityWidth = (barRect.width / 2f) * severityFraction;
+								int severityWidth = (int) ((barRect.width / 2f) * severityFraction);
 								severityRect = new Rect(barRect.x + ((barRect.width / 2f) - severityWidth), barRect.y, severityWidth, settings.internalBarHeight).Rounded();
-								var immunityWidth = (barRect.width / 2f) * immunityFraction;
+								int immunityWidth = (int) ((barRect.width / 2f) * immunityFraction);
 								immunityRect = new Rect(barRect.x + (barRect.width / 2f), barRect.y, immunityWidth, settings.internalBarHeight).Rounded();
 							}
 							else
 							{
-								var severityWidth = (barRect.width / 2f) * severityFraction;
+								int severityWidth = (int) ((barRect.width / 2f) * severityFraction);
 								severityRect = new Rect(barRect.x + ((barRect.width / 2f) - severityWidth), barRect.y, severityWidth, settings.internalBarHeight).Rounded();
 								severityRectMirror = new Rect(barRect.x + (barRect.width / 2f), barRect.y, severityWidth, settings.internalBarHeight).Rounded();
 							}
@@ -595,7 +776,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				return settings.internalBarHeight;
 			}
 
-			return 0f;
+			return 0;
 		}
 
 		private static Color GetHealthColorForBodypart(Pawn pawn, BodyPartRecord part)
