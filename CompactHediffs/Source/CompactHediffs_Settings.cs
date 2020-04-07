@@ -84,7 +84,7 @@ namespace PeteTimesSix.CompactHediffs
             Scribe_Values.Look<bool>(ref tendingIcons, "tendingIcons", true);
 
             Scribe_Values.Look<int>(ref extraTabWidth, "extraTabWidth", 100);
-            Scribe_Values.Look<int>(ref extraTabWidth, "extraTabHeight", 0);
+            Scribe_Values.Look<int>(ref extraTabHeight, "extraTabHeight", 0);
 
             Scribe_Values.Look<BarPosition>(ref severityBarsPosition, "severityBarsPosition", BarPosition.Above);
             Scribe_Values.Look<SeverityBarMode>(ref severityBarMode, "severityBarMode", SeverityBarMode.LeftToRight);

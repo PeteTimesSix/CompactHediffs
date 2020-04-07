@@ -102,7 +102,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 		public static void DrawHediffRow(Rect rowRect, Pawn pawn, IEnumerable<Hediff> diffs, ref float curY)
 		{
 			rowRect = rowRect.Rounded();
-			int currentY = (int) curY;
+			int currentY = (int)curY;
 
 			var settings = CompactHediffsMod.settings;
 
@@ -112,44 +112,13 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 			BodyPartRecord part = diffs.First<Hediff>().Part;
 			Hediff replacingPart = null;
+			if (part != null && settings.replacingPartInBodypart)
+				replacingPart = GetReplacingPart(diffs, part);
 
-			string bodyPartText;
+			string bodyPartText = MakeBodyPartText(pawn, part, replacingPart);
 
-			if (part == null)
-			{
-				bodyPartText = ColoredText.Colorize("WholeBody".Translate(), Color.grey);
-			}
-			else
-			{
-				if (settings.replacingPartInBodypart)
-					replacingPart = GetReplacingPart(diffs, part);
-
-				Color healthColor = GetHealthColorForBodypart(pawn, part);
-				if (replacingPart != null)
-				{
-					//diffs = diffs.Where(x => x != replacingPart); //do not list this hediff
-					var replacingPartColorLabel = ColoredText.Colorize(replacingPart.Label, replacingPart.def.defaultLabelColor);
-					var regex = new Regex(@"\b" + part.def.label + @"\b");
-					if (regex.IsMatch(replacingPart.Label))
-					{
-						replacingPartColorLabel = replacingPartColorLabel.Replace(part.def.label, ColoredText.Colorize(part.def.label, healthColor));
-						bodyPartText = ColoredText.Colorize(part.Label.Replace(part.def.label, replacingPartColorLabel), healthColor);
-					}
-					else
-					{
-						bodyPartText = ColoredText.Colorize(part.Label + ", ", healthColor) + replacingPartColorLabel;
-					}
-				}
-				else
-				{
-					bodyPartText = ColoredText.Colorize(part.Label, healthColor);
-				}
-			}
-
-			bodyPartText = bodyPartText.CapitalizeFirstNestingAware();
-
-			int bodypartLabelWidth = (int) (column_bodypartWidth - IconHeight / 2f);
-			int bodyPartLabelHeight = (int) (Text.CalcHeight(bodyPartText, bodypartLabelWidth));
+			int bodypartLabelWidth = (int)(column_bodypartWidth - IconHeight / 2f);
+			int bodyPartLabelHeight = (int)(Text.CalcHeight(bodyPartText, bodypartLabelWidth));
 			int hediffTotalHeight = 0;
 
 			List<IGrouping<HediffDef, Hediff>> groupings;
@@ -184,9 +153,9 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				}
 
 				int iconsWidth = CalcIconsWidthForGrouping(grouping);
-				int hediffLabelWidth = (int) (rowRect.width - (column_bodypartWidth + iconsWidth));
+				int hediffLabelWidth = (int)(rowRect.width - (column_bodypartWidth + iconsWidth));
 
-				hediffTotalHeight += (int) (Text.CalcHeight(hediffLabel, hediffLabelWidth));
+				hediffTotalHeight += (int)(Text.CalcHeight(hediffLabel, hediffLabelWidth));
 
 				if (settings.internalSeparator && i < groupings.Count - 1)
 					hediffTotalHeight += settings.internalSeparatorHeight;
@@ -253,7 +222,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				if (part != null)
 				{
 					Color healthColor = GetHealthColorForBodypart(pawn, part);
-					float partMaxHealth = getPartMaxHealth(pawn, part); 
+					float partMaxHealth = getPartMaxHealth(pawn, part);
 					float partHealthFraction = pawn.health.hediffSet.GetPartHealth(part) / partMaxHealth;
 
 					if (partHealthFraction < 1f)
@@ -292,7 +261,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				if (replacingPart != null)
 				{
 					GUI.color = Color.white;
-					int iconOffset = (int) Math.Max((bodyPartLabelHeight - IconHeight) / 2f, 0);
+					int iconOffset = (int)Math.Max((bodyPartLabelHeight - IconHeight) / 2f, 0);
 					Rect iconRect = new Rect(bodypartLabelWidth, currentY + iconOffset, IconHeight / 2f, IconHeight).Rounded();
 					CustomInfoCardButtonWidget.CustomInfoCardButton(iconRect, replacingPart);
 				}
@@ -336,14 +305,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				int iconsWidth = CalcIconsWidthForGrouping(grouping);
 				int hediffLabelWidth = (int)(rowRect.width - (column_bodypartWidth + iconsWidth));
 
-				int hediffTextHeight = (int) Text.CalcHeight(hediffLabel, hediffLabelWidth);
+				int hediffTextHeight = (int)Text.CalcHeight(hediffLabel, hediffLabelWidth);
 
 
-				int hediffColumnWidth = (int) (rowRect.width - column_bodypartWidth);
+				int hediffColumnWidth = (int)(rowRect.width - column_bodypartWidth);
 
 				if (settings.severityBarMode != CompactHediffs_Settings.SeverityBarMode.Off && settings.severityBarsPosition == CompactHediffs_Settings.BarPosition.Above)
 				{
-					foreach(Hediff hediff in grouping)
+					foreach (Hediff hediff in grouping)
 					{
 						Rect barRect = new Rect(column_bodypartWidth, currentY + innerY, hediffColumnWidth, settings.internalBarHeight).Rounded();
 						innerY += DrawSeverityBar(settings, barRect, hediff);
@@ -352,7 +321,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 				Rect fullHediffRect = new Rect(column_bodypartWidth, currentY + innerY, rowRect.width - column_bodypartWidth, hediffTextHeight).Rounded();
 				Rect hediffLabelrect = new Rect(column_bodypartWidth, currentY + innerY, hediffLabelWidth, hediffTextHeight).Rounded();
-				
+
 				/*if (tendDurationComp != null)
 				{
 					var props = (tendDurationComp.TProps as HediffCompProperties_TendDuration);
@@ -387,13 +356,13 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 				int widthAccumulator = 0;
 
-				int iconOffset = (int) Math.Max((fullHediffRect.height - IconHeight) / 2f, 0);
+				int iconOffset = (int)Math.Max((fullHediffRect.height - IconHeight) / 2f, 0);
 
 				//foreach (Hediff localHediff in hediffsByPriority)
 				{
 					Rect iconRect = new Rect(rowRect.width - (IconHeight / 2f), fullHediffRect.y + iconOffset, IconHeight / 2f, IconHeight).Rounded();
 					CustomInfoCardButtonWidget.CustomInfoCardButton(iconRect, representativeHediff);
-					widthAccumulator += (int) iconRect.width;
+					widthAccumulator += (int)iconRect.width;
 				}
 
 				/*if (stateIcon.HasValue)
@@ -438,7 +407,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				}
 				//draw bleeding injuries
 				GUI.color = Color.white;
-				foreach (Hediff localHediff in hediffsByPriority.Where(x => x.Bleeding).OrderByDescending(x => x.BleedRate)) 
+				foreach (Hediff localHediff in hediffsByPriority.Where(x => x.Bleeding).OrderByDescending(x => x.BleedRate))
 				{
 					if (localHediff.Bleeding)
 					{
@@ -453,7 +422,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 							iconRect = new Rect(rowRect.width - (widthAccumulator + IconHeight), fullHediffRect.y + iconOffset, IconHeight, IconHeight).Rounded();
 							GUI.DrawTexture(iconRect.ContractedBy(GenMath.LerpDouble(0f, 0.6f, 5f, 0f, Mathf.Min(localHediff.BleedRate, 1f))), Textures.Vanilla_BleedingIcon);
 						}
-						widthAccumulator += (int) iconRect.width;
+						widthAccumulator += (int)iconRect.width;
 					}
 					else
 					{
@@ -510,13 +479,48 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					{
 						//copied from Pawnmorph.PatchHealthCardUtilityDrawHediffRow
 						string tooltip = method_pawnmorpher_Tooltip.GetValue<string>(diffs);
-						if(tooltip != "")
+						if (tooltip != "")
 							TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => tooltip, (int)currentY + 117857));
 					}
 				}
 			}
 
-			curY = (float) currentY;
+			curY = (float)currentY;
+		}
+
+		private static string MakeBodyPartText(Pawn pawn, BodyPartRecord part, Hediff replacingPart)
+		{
+			string bodyPartText;
+			if (part == null)
+			{
+				bodyPartText = ColoredText.Colorize("WholeBody".Translate(), Color.grey);
+			}
+			else
+			{
+				Color healthColor = GetHealthColorForBodypart(pawn, part);
+				if (replacingPart != null)
+				{
+					//diffs = diffs.Where(x => x != replacingPart); //do not list this hediff
+					var replacingPartColorLabel = ColoredText.Colorize(replacingPart.Label, replacingPart.def.defaultLabelColor);
+					var regex = new Regex(@"\b" + part.def.label + @"\b");
+					if (regex.IsMatch(replacingPart.Label) && regex.IsMatch(part.Label))
+					{
+						replacingPartColorLabel = replacingPartColorLabel.Replace(part.def.label, ColoredText.Colorize(part.def.label, healthColor));
+						bodyPartText = ColoredText.Colorize(part.Label.Replace(part.def.label, replacingPartColorLabel), healthColor);
+					}
+					else
+					{
+						bodyPartText = ColoredText.Colorize(part.Label + ", ", healthColor) + replacingPartColorLabel;
+					}
+				}
+				else
+				{
+					bodyPartText = ColoredText.Colorize(part.Label, healthColor);
+				}
+			}
+
+			bodyPartText = bodyPartText.CapitalizeFirstNestingAware();
+			return bodyPartText;
 		}
 
 		private static float getPartMaxHealth(Pawn pawn, BodyPartRecord part)
