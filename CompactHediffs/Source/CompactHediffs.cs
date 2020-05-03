@@ -26,7 +26,7 @@ namespace PeteTimesSix.CompactHediffs
             var harmony = new Harmony("PeteTimesSix.CompactHediffs");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
-            pawnmorpherLoaded = ModLister.GetActiveModWithIdentifier("tachyonite.pawnmorpher") != null;
+            pawnmorpherLoaded = ModLister.GetActiveModWithIdentifier("tachyonite.pawnmorpher") != null | ModLister.GetActiveModWithIdentifier("tachyonite.pawnmorpherpublic") != null;
             eliteBionicsLoaded = ModLister.GetActiveModWithIdentifier("V1024.EBFramework") != null;
         }
 
