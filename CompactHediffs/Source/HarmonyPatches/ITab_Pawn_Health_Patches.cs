@@ -16,6 +16,8 @@ namespace PeteTimesSix.CompactHediffs.HarmonyPatches
         public static ITab_Pawn_Health singletonRef;
         public static Traverse<Vector2> field_size;
 
+        public static Vector2? initialSize;
+
         [HarmonyPostfix]
         public static void ITab_Pawn_Health_Patches_ctor_Postifx(ITab_Pawn_Health __instance)
         {
@@ -27,7 +29,11 @@ namespace PeteTimesSix.CompactHediffs.HarmonyPatches
         public static void setNewExtraSize(float newExtraWidth, float newExtraHeight)
         {
             if(field_size != null)
-                field_size.Value = new Vector2(630f + newExtraWidth, 430f + newExtraHeight);
+            {
+                if (!initialSize.HasValue)
+                    initialSize = field_size.Value;
+                field_size.Value = new Vector2(initialSize.Value.x + newExtraWidth, initialSize.Value.y + newExtraHeight);
+            }
         }
     }
 }

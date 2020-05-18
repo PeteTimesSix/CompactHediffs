@@ -38,7 +38,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 		private static Traverse method_CanEntryBeClicked;
 		private static Traverse method_EntryClicked;
 		private static Traverse method_GetTooltip;
-		private static Traverse method_getListPriority;
+		private static Traverse method_GetListPriority;
 
 		private static Traverse method_pawnmorpher_Tooltip;
 		private static Traverse method_eliteBionics_GetMaxHealth;
@@ -54,16 +54,20 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			method_CanEntryBeClicked = Traverse.Create(typeof(HealthCardUtility)).Method("CanEntryBeClicked", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn) });
 			method_EntryClicked = Traverse.Create(typeof(HealthCardUtility)).Method("EntryClicked", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn) });
 			method_GetTooltip = Traverse.Create(typeof(HealthCardUtility)).Method("GetTooltip", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn), typeof(BodyPartRecord) });
-			method_getListPriority = Traverse.Create(typeof(HealthCardUtility)).Method("GetListPriority", new Type[] { typeof(BodyPartRecord) });
+			method_GetListPriority = Traverse.Create(typeof(HealthCardUtility)).Method("GetListPriority", new Type[] { typeof(BodyPartRecord) });
 
 			if (CompactHediffsMod.pawnmorpherLoaded)
 			{
 				method_pawnmorpher_Tooltip = Traverse.CreateWithType("Pawnmorph.PatchHealthCardUtilityDrawHediffRow")?.Method("Tooltip", new Type[] { typeof(IEnumerable<Hediff>) });
+				if (!method_pawnmorpher_Tooltip.MethodExists())
+					method_pawnmorpher_Tooltip = null;
 			}
 			if (CompactHediffsMod.eliteBionicsLoaded)
 			{
 				//for the record, Vectorial1024, this is really rather rude.
 				method_eliteBionics_GetMaxHealth = Traverse.CreateWithType("EBF.VanillaExtender")?.Method("GetMaxHealth", new Type[] { typeof(BodyPartDef), typeof(Pawn), typeof(BodyPartRecord) });
+				if (!method_eliteBionics_GetMaxHealth.MethodExists())
+					method_eliteBionics_GetMaxHealth = null;
 			}
 		}
 
@@ -808,7 +812,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 		public static IEnumerable<IGrouping<BodyPartRecord, Hediff>> ReorderHediffGroups(IEnumerable<IGrouping<BodyPartRecord, Hediff>> returned, Pawn pawn, bool showBloodLoss)
 		{
-			Func<BodyPartRecord, float> getListPriority = (BodyPartRecord rec) => method_getListPriority.GetValue<float>(rec);
+			Func<BodyPartRecord, float> getListPriority = (BodyPartRecord rec) => method_GetListPriority.GetValue<float>(rec);
 
 			return returned.OrderByDescending(x => x.Max(i => i.TendableNow(true) ? i.TendPriority : -1)).ThenByDescending(i => getListPriority(i.First().Part));
 		}

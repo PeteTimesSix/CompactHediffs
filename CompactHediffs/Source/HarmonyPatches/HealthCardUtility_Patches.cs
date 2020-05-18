@@ -84,7 +84,9 @@ namespace PeteTimesSix.CompactHediffs.HarmonyPatches
             }
             else
             {
-                return 0.375f * (630f / (630f + settings.extraTabWidth));
+                float width = ITab_Pawn_Health_Patches.initialSize?.x ?? 630f;
+                float curWidth = ITab_Pawn_Health_Patches.field_size?.Value.x ?? width + settings.extraTabWidth;
+                return 0.375f * (width / curWidth);
             }
         }
     }
