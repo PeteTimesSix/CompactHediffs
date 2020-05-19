@@ -168,11 +168,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				{
 					var hediff = grouping.First();
 
-					float maxSeverity = -1;
-					if (hediff.def.lethalSeverity > 0f)
-						maxSeverity = hediff.def.lethalSeverity;
-					else if (hediff.def.maxSeverity > 0f)
-						maxSeverity = hediff.def.maxSeverity;
+					float maxSeverity = GetMaxSeverityForHediff(hediff);
 					float severityFraction = (hediff.Severity / maxSeverity);
 					if (severityFraction < 0)
 						severityFraction = 0;
@@ -633,11 +629,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			if (!settings.showHiddenProgressConditions && !showsSeverity)
  				return 0;
 
-			float maxSeverity = -1;
-			if (hediff.def.lethalSeverity > 0f)
-				maxSeverity = hediff.def.lethalSeverity;
-			else if (hediff.def.maxSeverity > 0f)
-				maxSeverity = hediff.def.maxSeverity;
+			float maxSeverity = GetMaxSeverityForHediff(hediff);
 			float severityFraction = (hediff.Severity / maxSeverity);
 			if (severityFraction < 0)
 				severityFraction = 0;
@@ -785,6 +777,24 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			}
 
 			return 0;
+		}
+
+		private static float GetMaxSeverityForHediff(Hediff hediff)
+		{
+			float maxSeverity = -1;
+			if (hediff.def.lethalSeverity > 0f)
+			{
+				maxSeverity = hediff.def.lethalSeverity;
+			}
+			else if (hediff.def.maxSeverity > 0f && hediff.def.maxSeverity < (float.MaxValue - float.Epsilon))
+			{
+				maxSeverity = hediff.def.maxSeverity;
+			}
+			else if (hediff is Hediff_Pregnant)
+			{
+				maxSeverity = 1f;
+			}
+			return maxSeverity;
 		}
 
 		private static Color GetHealthColorForBodypart(Pawn pawn, BodyPartRecord part)
