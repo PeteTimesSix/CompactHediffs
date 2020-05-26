@@ -156,7 +156,13 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					hediffLabel = hediffLabel.ApplyTag("i");
 				}
 
-				int iconsWidth = CalcIconsWidthForGrouping(grouping);
+				int iconsWidth = CalcIconsWidthForGrouping(grouping, out int iconCount);
+				float iconOverlap = 0;
+				if (iconsWidth > (rowRect.width - column_bodypartWidth) / 2f)
+				{
+					iconOverlap = (((iconsWidth - (rowRect.width - column_bodypartWidth) / 2f)) / (float)iconCount);
+					iconsWidth = (int)((rowRect.width - column_bodypartWidth) / 2f);
+				}
 				int hediffLabelWidth = (int)(rowRect.width - (column_bodypartWidth + iconsWidth));
 
 				hediffTotalHeight += (int)(Text.CalcHeight(hediffLabel, hediffLabelWidth));
@@ -302,8 +308,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					hediffLabel = hediffLabel.ApplyTag("i");
 				}
 
-				int iconsWidth = CalcIconsWidthForGrouping(grouping);
-				int hediffLabelWidth = (int)(rowRect.width - (column_bodypartWidth + iconsWidth));
+				int iconsWidth = CalcIconsWidthForGrouping(grouping, out int iconCount);
+				float iconOverlap = 1f;
+				if (iconsWidth > (rowRect.width - column_bodypartWidth) / 2f)
+				{
+					iconOverlap = ((rowRect.width - column_bodypartWidth) / 2f) / (float)iconsWidth;
+					iconsWidth = (int)((rowRect.width - column_bodypartWidth) / 2f);
+				}
+				int hediffLabelWidth = (int)((rowRect.width - column_bodypartWidth) - iconsWidth);
 
 				int hediffTextHeight = (int)Text.CalcHeight(hediffLabel, hediffLabelWidth);
 
@@ -322,60 +334,20 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				Rect fullHediffRect = new Rect(column_bodypartWidth, currentY + innerY, rowRect.width - column_bodypartWidth, hediffTextHeight).Rounded();
 				Rect hediffLabelrect = new Rect(column_bodypartWidth, currentY + innerY, hediffLabelWidth, hediffTextHeight).Rounded();
 
-				/*if (tendDurationComp != null)
-				{
-					var props = (tendDurationComp.TProps as HediffCompProperties_TendDuration);
-					if (!props.TendIsPermanent)
-					{
-						Log.Message(hediff.Label + " tend " + tendDurationComp.tendTicksLeft + " of " + props.TendTicksFull);
-						int duration = tendDurationComp.tendTicksLeft;
-						float durationFraction = (float)tendDurationComp.tendTicksLeft / (float)props.TendTicksFull;
-						float tendableFraction = (float)props.TendTicksOverlap / (float)props.TendTicksFull;
-
-
-						Rect tendableRectFull = new Rect(column_bodypartWidth, curY + innerY + fullHediffRect.height - settings.internalBarHeight, hediffColumnWidth, settings.internalBarHeight).Rounded();
-						Rect tendableNowRect = new Rect(tendableRectFull.x, tendableRectFull.y + 1f, tendableRectFull.width * tendableFraction, settings.internalBarHeight - 2f).Rounded();
-						Rect tendedRect = new Rect(tendableRectFull.x + tendableNowRect.width, tendableRectFull.y + 1f, tendableRectFull.width * (1f - tendableFraction), settings.internalBarHeight - 2f).Rounded();
-						Rect tendDurationRect = new Rect(tendableRectFull.x, tendableRectFull.y, tendableRectFull.width * durationFraction, settings.internalBarHeight).Rounded();
-
-						float brightnessPulse = Pulser.PulseBrightness(1f, 0.5f);
-
-						GUI.color = duration > 0f ? new Color(0.6f, 0.5f, 0.5f, 1f) : new Color(0.6f, 0.5f, 0.5f, brightnessPulse);
-						GUI.DrawTexture(tendableNowRect, Textures.translucentWhite);
-						GUI.color = duration > 0f ? new Color(0.65f, 0.7f, 0.65f, 1f) : new Color(0.65f, 0.7f, 0.65f, brightnessPulse);
-						GUI.DrawTexture(tendedRect, Textures.translucentWhite);
-
-						GUI.color = stateIcon.Color;
-						GUI.DrawTexture(tendDurationRect, Textures.translucentWhite);
-					}
-				}*/
-
 				GUI.color = representativeHediff.LabelColor;
 				Widgets.Label(hediffLabelrect, hediffLabel);
 				GUI.color = Color.white;
 
-				int widthAccumulator = 0;
+				float widthAccumulator = 0;
 
 				int iconOffset = (int)Math.Max((fullHediffRect.height - IconHeight) / 2f, 0);
 
-				//foreach (Hediff localHediff in hediffsByPriority)
+				//draw info button
 				{
 					Rect iconRect = new Rect(rowRect.width - (IconHeight / 2f), fullHediffRect.y + iconOffset, IconHeight / 2f, IconHeight).Rounded();
 					CustomInfoCardButtonWidget.CustomInfoCardButton(iconRect, representativeHediff);
-					widthAccumulator += (int)iconRect.width;
-				}
-
-				/*if (stateIcon.HasValue)
-				{
-					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + IconSize), fullHediffRect.y + iconOffset, IconSize, IconSize);
-					GUI.color = stateIcon.Color;
-					if (stateSeverity >= 0)
-						GUI.DrawTexture(iconRect.ContractedBy(GenMath.LerpDouble(0f, 1f, IconSize / 6f, 0f, Mathf.Min(stateSeverity, 1f))), stateIcon.Texture);
-					else
-						GUI.DrawTexture(iconRect.ContractedBy(IconSize / 6f), stateIcon.Texture);
-
 					widthAccumulator += iconRect.width;
-				}*/
+				}
 
 				var hediffsWithStateIcon = hediffsByPriority.Where(x => x.StateIcon.HasValue);
 				//draw non-injury icons first
@@ -385,7 +357,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					GUI.color = hediffStateIcon.Color;
 					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + IconHeight), fullHediffRect.y + iconOffset, IconHeight, IconHeight).Rounded();
 					GUI.DrawTexture(iconRect, hediffStateIcon.Texture);
-					widthAccumulator += (int)iconRect.width;
+					widthAccumulator += iconRect.width * iconOverlap;
 				}
 				//draw tended injuries
 				foreach (Hediff localHediff in hediffsWithStateIcon.Where(x => x.StateIcon.Texture == Textures.Vanilla_TendedIcon_Well_Injury).OrderByDescending(x => x.TryGetComp<HediffComp_TendDuration>().tendQuality))
@@ -403,7 +375,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 						iconRect = new Rect(rowRect.width - (widthAccumulator + IconHeight), fullHediffRect.y + iconOffset, IconHeight, IconHeight).Rounded();
 						GUI.DrawTexture(iconRect, hediffStateIcon.Texture);
 					}
-					widthAccumulator += (int)iconRect.width;
+					widthAccumulator += iconRect.width * iconOverlap;
 				}
 				//draw bleeding injuries
 				GUI.color = Color.white;
@@ -422,7 +394,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 							iconRect = new Rect(rowRect.width - (widthAccumulator + IconHeight), fullHediffRect.y + iconOffset, IconHeight, IconHeight).Rounded();
 							GUI.DrawTexture(iconRect.ContractedBy(GenMath.LerpDouble(0f, 0.6f, 5f, 0f, Mathf.Min(localHediff.BleedRate, 1f))), Textures.Vanilla_BleedingIcon);
 						}
-						widthAccumulator += (int)iconRect.width;
+						widthAccumulator += iconRect.width * iconOverlap;
 					}
 					else
 					{
@@ -531,8 +503,9 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				return method_eliteBionics_GetMaxHealth.GetValue<float>(part.def, pawn, part);
 		}
 
-		private static int CalcIconsWidthForGrouping(IGrouping<HediffDef, Hediff> grouping)
+		private static int CalcIconsWidthForGrouping(IGrouping<HediffDef, Hediff> grouping, out int count)
 		{
+			count = 0;
 			int iconsWidth = InfoIconWidth;
 			foreach (Hediff diff in grouping)
 			{
@@ -542,6 +515,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 						iconsWidth += TendIconWidth;
 					else
 						iconsWidth += IconHeight;
+					count++;
 				}
 				if (diff.Bleeding)
 				{
@@ -549,6 +523,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 						iconsWidth += BleedIconWidth;
 					else
 						iconsWidth += IconHeight;
+					count++;
 				}
 			}
 			return iconsWidth;
