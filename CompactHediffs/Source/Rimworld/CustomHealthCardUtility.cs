@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Verse;
 using PeteTimesSix.CompactHediffs.Rimworld.UI;
+using PeteTimesSix.CompactHediffs.Rimworld.UI_compat;
 
 namespace PeteTimesSix.CompactHediffs.Rimworld
 {
@@ -30,18 +31,26 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 		public static readonly int TendIconWidth = 15;
 		public static readonly int InfoIconWidth = 10;
 
-		//private static Traverse<float> field_lastMaxIconsTotalWidth;
-		//private static Traverse<float> field_scrollViewHeight;
-		//private static Traverse<Vector2> field_scrollPosition;
-		private static Traverse<bool> field_highlight;
+		public static readonly int SmartMedicineIconWidth = 20;
+		public static readonly int SmartMedicineIconHeight = 20;
 
-		private static Traverse method_CanEntryBeClicked;
-		private static Traverse method_EntryClicked;
-		private static Traverse method_GetTooltip;
-		private static Traverse method_GetListPriority;
+		//public static Traverse<float> field_lastMaxIconsTotalWidth;
+		//public static Traverse<float> field_scrollViewHeight;
+		//public static Traverse<Vector2> field_scrollPosition;
+		public static Traverse<bool> field_highlight;
 
-		private static Traverse method_pawnmorpher_Tooltip;
-		private static Traverse method_eliteBionics_GetMaxHealth;
+		public static Traverse method_CanEntryBeClicked;
+		public static Traverse method_EntryClicked;
+		public static Traverse method_GetTooltip;
+		public static Traverse method_GetListPriority;
+
+		public static Traverse method_pawnmorpher_Tooltip;
+		public static Traverse method_eliteBionics_GetMaxHealth;
+
+		public static Texture2D[] value_smartMedicine_careTextures;
+		public static Traverse method_smartMedicine_LabelButton;
+		public static Traverse method_smartMedicine_PriorityCareComp_Get;
+		public static Traverse method_smartMedicine_GetPawnMedicalCareCategory_GetCare;
 
 		static CustomHealthCardUtility() 
 		{
@@ -60,14 +69,45 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			{
 				method_pawnmorpher_Tooltip = Traverse.CreateWithType("Pawnmorph.PatchHealthCardUtilityDrawHediffRow")?.Method("Tooltip", new Type[] { typeof(IEnumerable<Hediff>) });
 				if (!method_pawnmorpher_Tooltip.MethodExists())
+				{
+					Log.Warning("could not access Pawnmorph.PatchHealthCardUtilityDrawHediffRow.Tooltip");
 					method_pawnmorpher_Tooltip = null;
+				}
 			}
 			if (CompactHediffsMod.eliteBionicsLoaded)
 			{
 				//for the record, Vectorial1024, this is really rather rude.
 				method_eliteBionics_GetMaxHealth = Traverse.CreateWithType("EBF.VanillaExtender")?.Method("GetMaxHealth", new Type[] { typeof(BodyPartDef), typeof(Pawn), typeof(BodyPartRecord) });
 				if (!method_eliteBionics_GetMaxHealth.MethodExists())
+				{
+					Log.Warning("could not access EBF.VanillaExtender.GetMaxHealth");
 					method_eliteBionics_GetMaxHealth = null;
+				}
+			}
+			if (CompactHediffsMod.smartMedicineLoaded) 
+			{
+				value_smartMedicine_careTextures = Traverse.Create(typeof(MedicalCareUtility)).Field<Texture2D[]>("careTextures").Value;
+
+				method_smartMedicine_LabelButton = Traverse.CreateWithType("SmartMedicine.HediffRowPriorityCare")?.Method("LabelButton", new Type[] { typeof(Rect), typeof(string), typeof(Hediff) });
+				if (!method_smartMedicine_LabelButton.MethodExists())
+				{
+					Log.Warning("could not access SmartMedicine.HediffRowPriorityCare.LabelButton");
+					method_smartMedicine_LabelButton = null;
+				}
+
+				method_smartMedicine_PriorityCareComp_Get = Traverse.CreateWithType("SmartMedicine.PriorityCareComp")?.Method("Get", new Type[] { });
+				if (!method_smartMedicine_PriorityCareComp_Get.MethodExists())
+				{
+					Log.Warning("could not access SmartMedicine.PriorityCareComp.Get");
+					method_smartMedicine_PriorityCareComp_Get = null;
+				}
+
+				method_smartMedicine_GetPawnMedicalCareCategory_GetCare = Traverse.CreateWithType("SmartMedicine.GetPawnMedicalCareCategory")?.Method("GetCare", new Type[] { typeof(Pawn) });
+				if (!method_smartMedicine_GetPawnMedicalCareCategory_GetCare.MethodExists())
+				{
+					Log.Warning("could not access SmartMedicine.GetPawnMedicalCareCategory.GetCare");
+					method_smartMedicine_GetPawnMedicalCareCategory_GetCare = null;
+				}
 			}
 		}
 
@@ -283,22 +323,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				string hediffLabel = GenLabelForHediffGroup(grouping);
 				var hediffsByPriority = grouping.OrderByDescending(x => x.TendableNow(true) ? x.TendPriority : -1);
 
-				//TextureAndColor stateIcon = null;
-				//float stateSeverity = 0f;
-				//float totalBleedRate = 0f;
-				/*foreach (Hediff heddif in hediffsByPriority)
-				{
-					stateIcon = heddif.StateIcon;
-					if (heddif.def.lethalSeverity > 0f)
-						stateSeverity = heddif.Severity / heddif.def.lethalSeverity;
-					else
-						stateSeverity = -1f;
-
-					totalBleedRate += heddif.BleedRate;
-				}*/
-
 				Hediff representativeHediff = grouping.First();
-				//string hediffLabel = representativeHediff.LabelCap;
 				if (grouping.Count() > 1)
 				{
 					hediffLabel = hediffLabel + " x" + grouping.Count().ToString();
@@ -335,8 +360,15 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				Rect hediffLabelrect = new Rect(column_bodypartWidth, currentY + innerY, hediffLabelWidth, hediffTextHeight).Rounded();
 
 				GUI.color = representativeHediff.LabelColor;
+				//this is where smartMedicine transpiles its float menu into, so lets follow suit
 				Widgets.Label(hediffLabelrect, hediffLabel);
 				GUI.color = Color.white;
+				if (CompactHediffsMod.smartMedicineLoaded)
+				{
+					MedicalCareCategory defaultCare = method_smartMedicine_GetPawnMedicalCareCategory_GetCare.GetValue<MedicalCareCategory>(pawn);
+					UI_SmartMedicine.AddSmartMedicineFloatMenuButton(fullHediffRect, hediffsByPriority, defaultCare);
+				}
+
 
 				float widthAccumulator = 0;
 
@@ -402,15 +434,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					}
 				}
 
-				/*if (totalBleedRate > 0f)
+				//draw Smart Medicine icon
+				if (CompactHediffsMod.smartMedicineLoaded)
 				{
-					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + IconSize), fullHediffRect.y + iconOffset, IconSize, IconSize);
+					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + SmartMedicineIconWidth), fullHediffRect.y + iconOffset, SmartMedicineIconWidth, SmartMedicineIconHeight).Rounded();
+					MedicalCareCategory defaultCare = method_smartMedicine_GetPawnMedicalCareCategory_GetCare.GetValue<MedicalCareCategory>(pawn);
+					UI_SmartMedicine.DrawSmartMedicineIcon(iconRect, defaultCare, hediffsByPriority.ToList());
+				}
 
-					DrawBleedIcon(iconRect, );
-
-					widthAccumulator += iconRect.width;
-				}*/
-				//field_lastMaxIconsTotalWidth.Value = Math.Max(widthAccumulator, field_lastMaxIconsTotalWidth.Value); 
 				innerY += hediffTextHeight;
 
 				if (settings.severityBarMode != CompactHediffs_Settings.SeverityBarMode.Off && settings.severityBarsPosition == CompactHediffs_Settings.BarPosition.Below)
@@ -523,6 +554,11 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 						iconsWidth += BleedIconWidth;
 					else
 						iconsWidth += IconHeight;
+					count++;
+				}
+				if (CompactHediffsMod.smartMedicineLoaded)
+				{
+					iconsWidth += SmartMedicineIconWidth;
 					count++;
 				}
 			}

@@ -311,6 +311,7 @@
     <Compile Include="Rimworld\UI\CustomInfoCardButtonWidget.cs" />
     <Compile Include="Rimworld\UI\Listing_StandardExtensions.cs" />
     <Compile Include="Rimworld\UI\Widgets_Custom.cs" />
+    <Compile Include="Rimworld\UI_compat\SmartMedicine.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Install.bat" />
