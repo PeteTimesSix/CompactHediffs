@@ -50,10 +50,13 @@ namespace PeteTimesSix.CompactHediffs
         public BarPosition healtbarsBarsPosition = BarPosition.Above;
         public bool bleedingIcons = true;
         public bool tendingIcons = true;
+        public bool bloodlossSpecialHandling = true;
 
         public BarPosition severityBarsPosition = BarPosition.Above;
         public SeverityBarMode severityBarMode = SeverityBarMode.LeftToRight;
         public bool severityBarHighContrast = true;
+        public bool severityBarTextured = true;
+        public bool showCumulativeThreatment = true;
         public bool showHiddenProgressConditions = false;
 
         public int extraTabWidth = 100;
@@ -62,8 +65,8 @@ namespace PeteTimesSix.CompactHediffs
         public int verticalSeparatorWidth = 2;
         public int horizontalSeparatorHeight = 2;
         public int internalSeparatorHeight = 2;
-        public int healthBarHeight = 3;
-        public int internalBarHeight = 3;
+        public int healthBarHeight = 4;
+        public int internalBarHeight = 4;
 
         public override void ExposeData()
         {
@@ -82,13 +85,16 @@ namespace PeteTimesSix.CompactHediffs
             Scribe_Values.Look<BarPosition>(ref healtbarsBarsPosition, "healtbarsBarsPosition", BarPosition.Above);
             Scribe_Values.Look<bool>(ref bleedingIcons, "bleedingIcons", true);
             Scribe_Values.Look<bool>(ref tendingIcons, "tendingIcons", true);
+            Scribe_Values.Look<bool>(ref bloodlossSpecialHandling, "bloodlossSpecialHandling", true);
 
             Scribe_Values.Look<int>(ref extraTabWidth, "extraTabWidth", 100);
             Scribe_Values.Look<int>(ref extraTabHeight, "extraTabHeight", 0);
 
             Scribe_Values.Look<BarPosition>(ref severityBarsPosition, "severityBarsPosition", BarPosition.Above);
             Scribe_Values.Look<SeverityBarMode>(ref severityBarMode, "severityBarMode", SeverityBarMode.LeftToRight);
-            Scribe_Values.Look<bool>(ref severityBarHighContrast, "severityBarHighContrast", false);
+            Scribe_Values.Look<bool>(ref severityBarHighContrast, "severityBarHighContrast", true);
+            Scribe_Values.Look<bool>(ref severityBarTextured, "severityBarTextured", true);
+            Scribe_Values.Look<bool>(ref showCumulativeThreatment, "showCumulativeThreatment", true);
             Scribe_Values.Look<bool>(ref showHiddenProgressConditions, "showHiddenProgressConditions", false);
         }
 
@@ -153,6 +159,7 @@ namespace PeteTimesSix.CompactHediffs
             listingStandard.CheckboxLabeled("settings_bodypartHealthbars".Translate(), ref bodypartHealthbars, "settings_bodypartHealthbars_tooltip".Translate());
             listingStandard.CheckboxLabeled("settings_bleedingIcons".Translate(), ref bleedingIcons, "settings_bleedingIcons_tooltip".Translate());
             listingStandard.CheckboxLabeled("settings_tendingIcons".Translate(), ref tendingIcons, "settings_tendingIcons_tooltip".Translate());
+            listingStandard.CheckboxLabeled("settings_bloodlossSpecialHandling".Translate(), ref bloodlossSpecialHandling, "settings_bloodlossSpecialHandling_tooltip".Translate());
 
             listingStandard.End();
 
@@ -164,7 +171,9 @@ namespace PeteTimesSix.CompactHediffs
             listingStandardWide.EnumSelector(ref severityBarMode, "settings_severityBars".Translate(), valueLabelPrefix: "SeverityBarMode_", tooltip: "settings_severityBars_tooltip".Translate());
             listingStandardWide.EnumSelector(ref severityBarsPosition, "settings_severityBarPosition".Translate(), valueLabelPrefix: "BarPosition_", tooltip: "settings_severityBarPosition_tooltip".Translate());
 
+            listingStandardWide.CheckboxLabeled("settings_severityBarTextured".Translate(), ref severityBarTextured, "settings_severityBarTextured_tooltip".Translate());
             listingStandardWide.CheckboxLabeled("settings_severityBarHighContrast".Translate(), ref severityBarHighContrast, "settings_severityBarHighContrast_tooltip".Translate());
+            listingStandardWide.CheckboxLabeled("settings_showCumulativeThreatment".Translate(), ref showCumulativeThreatment, "settings_showCumulativeThreatment_tooltip".Translate());
             listingStandardWide.CheckboxLabeled("settings_showHiddenProgressConditions".Translate(), ref showHiddenProgressConditions, "settings_showHiddenProgressConditions_tooltip".Translate());
 
             listingStandardWide.NewColumn();

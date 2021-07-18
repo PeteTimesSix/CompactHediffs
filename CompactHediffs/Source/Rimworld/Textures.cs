@@ -39,5 +39,22 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
         public static readonly Texture2D TendingIcon_3 = ContentFinder<Texture2D>.Get("tending_3", true);
         public static readonly Texture2D TendingIcon_4 = ContentFinder<Texture2D>.Get("tending_4", true);
         public static readonly Texture2D TendingIcon_5 = ContentFinder<Texture2D>.Get("tending_5", true);
+
+        public static readonly Texture2D Bar_Pill = ContentFinder<Texture2D>.Get("bars/pill", true);
+        public static readonly Texture2D Bar_PillBig = ContentFinder<Texture2D>.Get("bars/pill_big", true);
+        public static readonly Texture2D Bar_Ragged = ContentFinder<Texture2D>.Get("bars/ragged", true);
+        public static readonly Texture2D Bar_Infected = ContentFinder<Texture2D>.Get("bars/infected", true);
+        public static readonly Texture2D Bar_DNA = ContentFinder<Texture2D>.Get("bars/dnatwist", true);
+        public static readonly Texture2D Bar_Malnutrition = ContentFinder<Texture2D>.Get("bars/malnutrition", true);
+
+        static Textures()
+        {
+            Bar_Pill.wrapMode = TextureWrapMode.Repeat;
+            Bar_PillBig.wrapMode = TextureWrapMode.Repeat;
+            Bar_Ragged.wrapMode = TextureWrapMode.Repeat;
+            Bar_Infected.wrapMode = TextureWrapMode.Repeat;
+            Bar_DNA.wrapMode = TextureWrapMode.Repeat;
+            Bar_Malnutrition.wrapMode = TextureWrapMode.Repeat;
+        }
     }
 }

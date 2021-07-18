@@ -27,6 +27,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 		public static readonly Color MissingBodyPart = new Color(0.15f, 0.0f, 0.0f, 1f);
 
 		public static readonly int IconHeight = 20;
+		public static readonly int DefaultIconHeight = 18;
 		public static readonly int BleedIconWidth = 15;
 		public static readonly int TendIconWidth = 15;
 		public static readonly int InfoIconWidth = 10;
@@ -38,6 +39,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 		//public static Traverse<float> field_scrollViewHeight;
 		//public static Traverse<Vector2> field_scrollPosition;
 		public static Traverse<bool> field_highlight;
+		public static Traverse<bool> field_showHediffsDebugInfo;
 
 		public static Traverse method_CanEntryBeClicked;
 		public static Traverse method_EntryClicked;
@@ -58,12 +60,22 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			//field_scrollViewHeight = Traverse.Create(typeof(HealthCardUtility)).Field<float>("scrollViewHeight");
 			//field_scrollPosition = Traverse.Create(typeof(HealthCardUtility)).Field<Vector2>("scrollPosition");
 			field_highlight = Traverse.Create(typeof(HealthCardUtility)).Field<bool>("highlight");
-
+			field_showHediffsDebugInfo = Traverse.Create(typeof(HealthCardUtility)).Field<bool>("showHediffsDebugInfo");
 
 			method_CanEntryBeClicked = Traverse.Create(typeof(HealthCardUtility)).Method("CanEntryBeClicked", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn) });
 			method_EntryClicked = Traverse.Create(typeof(HealthCardUtility)).Method("EntryClicked", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn) });
-			method_GetTooltip = Traverse.Create(typeof(HealthCardUtility)).Method("GetTooltip", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn), typeof(BodyPartRecord) });
+			method_GetTooltip = Traverse.Create(typeof(HealthCardUtility)).Method("GetTooltip", new Type[] { typeof(Pawn), typeof(BodyPartRecord) });
+			//method_GetTooltip = Traverse.Create(typeof(HealthCardUtility)).Method("GetTooltip", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn), typeof(BodyPartRecord) });
 			method_GetListPriority = Traverse.Create(typeof(HealthCardUtility)).Method("GetListPriority", new Type[] { typeof(BodyPartRecord) });
+
+			if(!method_CanEntryBeClicked.MethodExists())
+				Log.Warning("could not access HealthCardUtility.CanEntryBeClicked");
+			if (!method_EntryClicked.MethodExists())
+				Log.Warning("could not access HealthCardUtility.EntryClicked");
+			if (!method_GetTooltip.MethodExists())
+				Log.Warning("could not access HealthCardUtility.GetTooltip");
+			if (!method_GetListPriority.MethodExists())
+				Log.Warning("could not access HealthCardUtility.GetListPriority");
 
 			if (CompactHediffsMod.pawnmorpherLoaded)
 			{
@@ -313,6 +325,30 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				}
 			}
 
+			//moved up here so the tooltip is first... although thats probably what the TooltipPriority is for
+			int tooltipIDOffset = 0;
+			if (pawn != null)
+			{
+				if (Mouse.IsOver(wholeEntryRect))
+				{
+					if (part != null)
+					{
+						TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => method_GetTooltip.GetValue<string>(pawn, part), (int)currentY + 7857 + tooltipIDOffset, TooltipPriority.Pawn));
+						tooltipIDOffset++;
+					}
+					if (CompactHediffsMod.pawnmorpherLoaded)
+					{
+						//copied from Pawnmorph.PatchHealthCardUtilityDrawHediffRow
+						string tooltip = method_pawnmorpher_Tooltip.GetValue<string>(diffs);
+						if (tooltip != "")
+						{
+							TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => tooltip, (int)currentY + 117857 + tooltipIDOffset));
+							tooltipIDOffset++;
+						}
+					}
+				}
+			}
+
 			int innerY = 0;
 
 			GUI.color = Color.white;
@@ -353,13 +389,18 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					{
 						Rect barRect = new Rect(column_bodypartWidth, currentY + innerY, hediffColumnWidth, settings.internalBarHeight).Rounded();
 						innerY += DrawSeverityBar(settings, barRect, hediff);
+                        if (settings.showCumulativeThreatment) 
+						{
+							Rect cumulativeBarRect = new Rect(column_bodypartWidth, currentY + innerY, hediffColumnWidth, settings.internalBarHeight).Rounded();
+							innerY += DrawCumulativeThreatmentBar(settings, cumulativeBarRect, hediff);
+						}
 					}
 				}
 
 				Rect fullHediffRect = new Rect(column_bodypartWidth, currentY + innerY, rowRect.width - column_bodypartWidth, hediffTextHeight).Rounded();
 				Rect hediffLabelrect = new Rect(column_bodypartWidth, currentY + innerY, hediffLabelWidth, hediffTextHeight).Rounded();
 
-				GUI.color = representativeHediff.LabelColor;
+				GUI.color = GetHediffColor(settings, representativeHediff);
 				//this is where smartMedicine transpiles its float menu into, so lets follow suit
 				Widgets.Label(hediffLabelrect, hediffLabel);
 				GUI.color = Color.white;
@@ -387,7 +428,8 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				{
 					var hediffStateIcon = localHediff.StateIcon;
 					GUI.color = hediffStateIcon.Color;
-					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + IconHeight), fullHediffRect.y + iconOffset, IconHeight, IconHeight).Rounded();
+					int deafultIconOffset = (int)Math.Max((fullHediffRect.height - DefaultIconHeight) / 2f, 0);
+					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + DefaultIconHeight), fullHediffRect.y + deafultIconOffset, DefaultIconHeight, DefaultIconHeight).Rounded();
 					GUI.DrawTexture(iconRect, hediffStateIcon.Texture);
 					widthAccumulator += iconRect.width * iconOverlap;
 				}
@@ -464,6 +506,11 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					fullHediffRect.height += settings.internalSeparatorHeight;
 				}
 
+				foreach(Hediff localHediff in hediffsByPriority) 
+				{
+					TooltipHandler.TipRegion(fullHediffRect, new TipSignal(() => localHediff.GetTooltip(pawn, field_showHediffsDebugInfo.Value), (int)currentY + 7857 + tooltipIDOffset, TooltipPriority.Default));
+					tooltipIDOffset++;
+				}
 			}
 			GUI.color = Color.white;
 			currentY += Math.Max(bodyPartLabelHeight, hediffTotalHeight);
@@ -475,23 +522,12 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				{
 					method_EntryClicked.GetValue(diffs, pawn);
 				}
-				if (Mouse.IsOver(wholeEntryRect))
-				{
-					TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => method_GetTooltip.GetValue<string>(diffs, pawn, part), (int)currentY + 7857));
-					if (CompactHediffsMod.pawnmorpherLoaded)
-					{
-						//copied from Pawnmorph.PatchHealthCardUtilityDrawHediffRow
-						string tooltip = method_pawnmorpher_Tooltip.GetValue<string>(diffs);
-						if (tooltip != "")
-							TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => tooltip, (int)currentY + 117857));
-					}
-				}
 			}
 
 			curY = (float)currentY;
 		}
 
-		private static string MakeBodyPartText(Pawn pawn, BodyPartRecord part, Hediff replacingPart)
+        private static string MakeBodyPartText(Pawn pawn, BodyPartRecord part, Hediff replacingPart)
 		{
 			string bodyPartText;
 			if (part == null)
@@ -631,6 +667,22 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			GUI.DrawTexture(iconRect, bleedIcon);
 		}
 
+		private static Color GetHediffColor(CompactHediffs_Settings settings, Hediff hediff)
+		{
+			if (settings.bloodlossSpecialHandling && hediff.def == HediffDefOf.BloodLoss)
+			{
+				if (hediff.Severity < 0.65f)
+					return new Color(1f, 1f - (hediff.Severity / 0.65f), 1f - (hediff.Severity / 0.65f));
+				else
+				{
+					var factor = ((hediff.Severity - 0.65f) / 0.35f);
+					return new Color(1f - (0.5f * factor), 0f, 0.25f * factor);
+				}
+			}
+			return hediff.LabelColor;
+		}
+
+
 		private static int DrawSeverityBar(CompactHediffs_Settings settings, Rect barRect, Hediff hediff)
 		{
 			if (settings.severityBarMode == CompactHediffs_Settings.SeverityBarMode.Off)
@@ -651,6 +703,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			bool hasSeverity = severityFraction > 0.001f;
 			float immunityFraction = hasImmunity ? immunizableComp.Immunity : 0;
 
+			Color hediffColor = GetHediffColor(settings, hediff);
 
 			if (hasImmunity || hasSeverity)
 			{
@@ -659,29 +712,39 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 				Rect? commonRect = null;
 				Rect? commonRectMirror = null;
-				Color commonColor = settings.severityBarHighContrast ? Color.white : hediff.LabelColor;
+				Color commonColor = settings.severityBarHighContrast ? Color.white : hediffColor;
 				Rect? severityRect = null;
 				Rect? severityRectMirror = null;
-				Color severityColor = settings.severityBarHighContrast ? Color.red : hediff.LabelColor;
+				Color severityColor = settings.severityBarHighContrast ? Color.red : hediffColor;
 				Rect? immunityRect = null;
 				Rect? immunityRectMirror = null;
 				Color immunityColor = settings.severityBarHighContrast ? BluishGreen : CyanWhite;
+				Texture2D commonTexture = TexUI.FastFillTex;
+				Texture2D severityTexture = TexUI.FastFillTex;
+				Texture2D immunityTexture = TexUI.FastFillTex;
+				if (hediff.def == HediffDefOf.WoundInfection)
+				{
+					severityTexture = Textures.Bar_Infected;
+					immunityTexture = Textures.Bar_Pill;
+				}
+				severityTexture = Textures.Bar_Infected;
+				immunityTexture = Textures.Bar_Pill;
+
 
 				switch (settings.severityBarMode) 
 				{
 					case CompactHediffs_Settings.SeverityBarMode.LeftToRight:
-						commonColor.a = 0.5f;
 						if (immunityFraction > severityFraction)
 						{
-							commonRect = new Rect(barRect.x, barRect.y, barRect.width * severityFraction, settings.internalBarHeight).Rounded();
-							immunityRect = new Rect(barRect.x + commonRect.Value.width, barRect.y, barRect.width * (immunityFraction - severityFraction), settings.internalBarHeight).Rounded();
+							severityRect = new Rect(barRect.x, barRect.y, barRect.width * severityFraction, settings.internalBarHeight).Rounded();
+							immunityRect = new Rect(barRect.x + severityRect.Value.width, barRect.y, barRect.width * (immunityFraction - severityFraction), settings.internalBarHeight).Rounded();
 						}
 						else
 						{
 							if (hasImmunity)
 							{
-								commonRect = new Rect(barRect.x, barRect.y, barRect.width * (severityFraction - (severityFraction - immunityFraction)), settings.internalBarHeight).Rounded();
-								severityRect = new Rect(barRect.x + commonRect.Value.width, barRect.y, barRect.width * (severityFraction - immunityFraction), settings.internalBarHeight).Rounded();
+								immunityRect = new Rect(barRect.x, barRect.y, barRect.width * (severityFraction - (severityFraction - immunityFraction)), settings.internalBarHeight).Rounded();
+								severityRect = new Rect(barRect.x + immunityRect.Value.width, barRect.y, barRect.width * (severityFraction - immunityFraction), settings.internalBarHeight).Rounded();
 							}
 							else
 							{
@@ -691,12 +754,10 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 						break;
 					case CompactHediffs_Settings.SeverityBarMode.EdgeToMiddle:
 						{
-							commonRect = new Rect(barRect.x + ((barRect.width / 2f) - 1f), barRect.y, 2f, settings.internalBarHeight).Rounded();
-							if (!settings.severityBarHighContrast)
-							{
-								severityColor.a = 0.75f;
-								immunityColor.a = 0.75f;
-							}
+							var midRect = new Rect(barRect.x + ((barRect.width / 2f) - 1f), barRect.y, 2f, settings.internalBarHeight).Rounded();
+							GUI.color = settings.separatorNightMode ? Color.black : Color.grey;
+							GUI.DrawTexture(midRect, TexUI.FastFillTex);
+
 							if (hasImmunity)
 							{
 								int severityWidth = (int) ((barRect.width / 2f) * severityFraction);
@@ -706,19 +767,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 							}
 							else
 							{
-								int severityWidth = (int) ((barRect.width / 2f) * severityFraction);
-								severityRect = new Rect(barRect.x, barRect.y, severityWidth, settings.internalBarHeight).Rounded();
-								severityRectMirror = new Rect(barRect.x + (barRect.width - severityWidth), barRect.y, severityWidth, settings.internalBarHeight).Rounded();
+								int commonWidth = (int) ((barRect.width / 2f) * severityFraction);
+								commonRect = new Rect(barRect.x, barRect.y, commonWidth, settings.internalBarHeight).Rounded();
+								commonRectMirror = new Rect(barRect.x + (barRect.width - commonWidth), barRect.y, commonWidth, settings.internalBarHeight).Rounded();
 							}
 						}
 						break;
 					case CompactHediffs_Settings.SeverityBarMode.MiddleToEdge:
 						{
-							if (!settings.severityBarHighContrast)
-							{
-								severityColor.a = 0.75f;
-								immunityColor.a = 0.75f;
-							}
 							if (hasImmunity)
 							{
 								int severityWidth = (int) ((barRect.width / 2f) * severityFraction);
@@ -728,10 +784,166 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 							}
 							else
 							{
-								int severityWidth = (int) ((barRect.width / 2f) * severityFraction);
-								severityRect = new Rect(barRect.x + ((barRect.width / 2f) - severityWidth), barRect.y, severityWidth, settings.internalBarHeight).Rounded();
-								severityRectMirror = new Rect(barRect.x + (barRect.width / 2f), barRect.y, severityWidth, settings.internalBarHeight).Rounded();
+								int commonWidth = (int) ((barRect.width / 2f) * severityFraction);
+								commonRect = new Rect(barRect.x + ((barRect.width / 2f) - commonWidth), barRect.y, commonWidth, settings.internalBarHeight).Rounded();
+								commonRectMirror = new Rect(barRect.x + (barRect.width / 2f), barRect.y, commonWidth, settings.internalBarHeight).Rounded();
 							}
+						}
+						break;
+				}
+
+				if (settings.bloodlossSpecialHandling && hediff.def == HediffDefOf.BloodLoss)
+				{
+					var bloodlossSpeed = Math.Min(hediff.pawn.health.hediffSet.BleedRateTotal, 4f);
+					if (bloodlossSpeed >= 0.1f)
+					{
+						var alphaMult = Pulser.PulseBrightness(0.5f + bloodlossSpeed * 0.75f, 0.5f);
+						commonColor.a *= alphaMult;
+					}
+					commonTexture = Textures.Bar_Ragged;
+				}
+				else
+				{
+					bool canBeTendedNow = !hediff.IsPermanent() && !hediff.pawn.Dead && hediff.TendableNow(false);
+					bool needsTendingNow = canBeTendedNow && tendDurationComp != null && tendDurationComp.tendTicksLeft <= 0;
+					if (canBeTendedNow)
+					{
+						var alphaMult = needsTendingNow ? Pulser.PulseBrightness(2f, 0.5f) : Pulser.PulseBrightness(1f, 0.5f);
+						commonColor.a *= alphaMult;
+						severityColor.a *= alphaMult;
+						immunityColor.a *= alphaMult;
+					}
+				}
+
+				/*if (!showsSeverity) 
+				{
+					commonColor.a *= 0.65f;
+					severityColor.a *= 0.65f;
+					immunityColor.a *= 0.65f;
+				}*/
+
+				if (!settings.severityBarTextured)
+				{
+					commonTexture = TexUI.FastFillTex;
+					severityTexture = TexUI.FastFillTex;
+					immunityTexture = TexUI.FastFillTex;
+				}
+				else if(hediff.def == HediffDefOf.Malnutrition)
+				{
+					commonTexture = Textures.Bar_Malnutrition;
+					severityTexture = Textures.Bar_Malnutrition;
+				}
+				else if (CompactHediffsMod.pawnmorpherLoaded && hediff.GetType().ToString().Contains("Pawnmorph"))
+				{
+					commonTexture = Textures.Bar_DNA;
+					severityTexture = Textures.Bar_DNA;
+				}
+
+
+				if (!settings.severityBarHighContrast)
+				{
+					if(commonTexture == TexUI.FastFillTex)
+						commonColor.a = 0.75f;
+					if (severityTexture == TexUI.FastFillTex)
+						severityColor.a = 0.75f;
+					if (immunityTexture == TexUI.FastFillTex)
+						immunityColor.a = 0.75f;
+				}
+
+
+				if (commonRect.HasValue)
+				{
+					GUI.color = commonColor;
+					var drawnRect = commonRect.Value;
+					float texScale = commonTexture.height / settings.internalBarHeight;
+					GUI.DrawTextureWithTexCoords(drawnRect, commonTexture, new Rect(0,0, texScale * (drawnRect.width / commonTexture.width), texScale * (drawnRect.height / commonTexture.height)));
+				}
+				if (commonRectMirror.HasValue)
+				{
+					GUI.color = commonColor;
+					var drawnRect = commonRectMirror.Value;
+					float texScale = commonTexture.height / settings.internalBarHeight;
+					GUI.DrawTextureWithTexCoords(drawnRect, commonTexture, new Rect(0, 0, texScale * (drawnRect.width / commonTexture.width), texScale * (drawnRect.height / commonTexture.height)));
+				}
+				if (severityRect.HasValue)
+				{
+					GUI.color = severityColor;
+					var drawnRect = severityRect.Value;
+					float texScale = severityTexture.height / settings.internalBarHeight;
+					GUI.DrawTextureWithTexCoords(drawnRect, severityTexture, new Rect(0, 0, texScale * (drawnRect.width / severityTexture.width), texScale * (drawnRect.height / severityTexture.height)));
+				}
+				if (severityRectMirror.HasValue)
+				{
+					GUI.color = severityColor;
+					var drawnRect = severityRectMirror.Value;
+					float texScale = severityTexture.height / settings.internalBarHeight;
+					GUI.DrawTextureWithTexCoords(drawnRect, severityTexture, new Rect(0, 0, texScale * (drawnRect.width / severityTexture.width), texScale * (drawnRect.height / severityTexture.height)));
+				}
+				if (immunityRect.HasValue)
+				{
+					GUI.color = immunityColor;
+					var drawnRect = immunityRect.Value;
+					float texScale = immunityTexture.height / settings.internalBarHeight;
+					GUI.DrawTextureWithTexCoords(drawnRect, immunityTexture, new Rect(0, 0, texScale * (drawnRect.width / immunityTexture.width), texScale * (drawnRect.height / immunityTexture.height)));
+				}
+				if (immunityRectMirror.HasValue)
+				{
+					GUI.color = immunityColor;
+					var drawnRect = immunityRectMirror.Value;
+					float texScale = immunityTexture.height / settings.internalBarHeight;
+					GUI.DrawTextureWithTexCoords(drawnRect, immunityTexture, new Rect(0, 0, texScale * (drawnRect.width / immunityTexture.width), texScale * (drawnRect.height / immunityTexture.height)));
+				}
+
+				GUI.color = Color.white;
+				return settings.internalBarHeight;
+			}
+
+			return 0;
+		}
+
+		private static int DrawCumulativeThreatmentBar(CompactHediffs_Settings settings, Rect barRect, Hediff hediff)
+		{
+			var tendDurationComp = hediff.TryGetComp<HediffComp_TendDuration>();
+			var tendQualityRequired = (tendDurationComp?.props as HediffCompProperties_TendDuration)?.disappearsAtTotalTendQuality;
+			if (tendDurationComp == null || !tendQualityRequired.HasValue || tendQualityRequired.Value <= 0)
+				return 0;
+			var tendedFraction = tendDurationComp.tendQuality / tendQualityRequired.Value;
+
+			Color hediffColor = GetHediffColor(settings, hediff);
+
+			{
+				GUI.color = Color.black;
+				GUI.DrawTexture(barRect, Textures.translucentWhite);
+
+				Rect? immunityRect = null;
+				Rect? immunityRectMirror = null;
+				Color immunityColor = settings.severityBarHighContrast ? BluishGreen : CyanWhite;
+				Texture2D immunityTexture = Textures.Bar_PillBig;
+
+				if (!settings.severityBarHighContrast)
+				{
+					immunityColor.a = 0.75f;
+				}
+
+				switch (settings.severityBarMode)
+				{
+					case CompactHediffs_Settings.SeverityBarMode.LeftToRight:
+						immunityRect = new Rect(barRect.x, barRect.y, barRect.width * tendedFraction, settings.internalBarHeight).Rounded();
+						break;
+					case CompactHediffs_Settings.SeverityBarMode.EdgeToMiddle:
+						{
+							var midRect = new Rect(barRect.x + ((barRect.width / 2f) - 1f), barRect.y, 2f, settings.internalBarHeight).Rounded();
+							GUI.color = settings.separatorNightMode ? Color.black : Color.grey;
+							GUI.DrawTexture(midRect, TexUI.FastFillTex);
+
+							var width = barRect.width * (tendedFraction / 2f);
+							immunityRect = new Rect(barRect.x, barRect.y, width, settings.internalBarHeight).Rounded();
+							immunityRectMirror = new Rect(barRect.x + (barRect.width - width), barRect.y, width, settings.internalBarHeight).Rounded();
+						}
+						break;
+					case CompactHediffs_Settings.SeverityBarMode.MiddleToEdge:
+						{
+							immunityRect = new Rect(barRect.x + ((barRect.width * tendedFraction) / 2f), barRect.y, barRect.width * tendedFraction, settings.internalBarHeight).Rounded();
 						}
 						break;
 				}
@@ -741,46 +953,25 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				if (canBeTendedNow)
 				{
 					var alphaMult = needsTendingNow ? Pulser.PulseBrightness(2f, 0.5f) : Pulser.PulseBrightness(1f, 0.5f);
-					commonColor.a *= alphaMult;
-					severityColor.a *= alphaMult;
 					immunityColor.a *= alphaMult;
 				}
-				if (!showsSeverity) 
-				{
-					commonColor.a *= 0.65f;
-					severityColor.a *= 0.65f;
-					immunityColor.a *= 0.65f;
-				}
 
-				if(commonRect.HasValue)
+				if (!settings.severityBarTextured)
 				{
-					GUI.color = commonColor;
-					GUI.DrawTexture(commonRect.Value, TexUI.FastFillTex);
+					immunityTexture = TexUI.FastFillTex;
 				}
-				if (commonRectMirror.HasValue)
-				{
-					GUI.color = commonColor;
-					GUI.DrawTexture(commonRectMirror.Value, TexUI.FastFillTex);
-				}
-				if (severityRect.HasValue)
-				{
-					GUI.color = severityColor;
-					GUI.DrawTexture(severityRect.Value, TexUI.FastFillTex);
-				}
-				if (severityRectMirror.HasValue)
-				{
-					GUI.color = severityColor;
-					GUI.DrawTexture(severityRectMirror.Value, TexUI.FastFillTex);
-				}
+				GUI.color = immunityColor;
 				if (immunityRect.HasValue)
 				{
-					GUI.color = immunityColor;
-					GUI.DrawTexture(immunityRect.Value, TexUI.FastFillTex);
+					var drawnRect = immunityRect.Value;
+					float texScale = immunityTexture.height / settings.internalBarHeight;
+					GUI.DrawTextureWithTexCoords(drawnRect, immunityTexture, new Rect(0, 0, texScale * (drawnRect.width / immunityTexture.width), texScale * (drawnRect.height / immunityTexture.height)));
 				}
 				if (immunityRectMirror.HasValue)
 				{
-					GUI.color = immunityColor;
-					GUI.DrawTexture(immunityRectMirror.Value, TexUI.FastFillTex);
+					var drawnRect = immunityRectMirror.Value;
+					float texScale = immunityTexture.height / settings.internalBarHeight;
+					GUI.DrawTextureWithTexCoords(drawnRect, immunityTexture, new Rect(0, 0, texScale * (drawnRect.width / immunityTexture.width), texScale * (drawnRect.height / immunityTexture.height)));
 				}
 
 				GUI.color = Color.white;
