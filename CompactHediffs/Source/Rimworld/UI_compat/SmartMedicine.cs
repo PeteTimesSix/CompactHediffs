@@ -17,8 +17,6 @@ namespace PeteTimesSix.CompactHediffs.Rimworld.UI_compat
 			MedicalCareCategory maxCare;
 			Hediff maxCareHediff = HighestCarePriority(hediffs, out maxCare);
 
-			//Log.Message("max care (default: " + defaultCare + ") for " + hediffs.First().Label + " " + hediffs.First().loadID + " is " + maxCare + " (hediff:" + (maxCareHediff != null ? maxCareHediff.loadID.ToString() : "null") + ")");
-
 			if (maxCareHediff == null)
 			{
 				return;
@@ -42,8 +40,6 @@ namespace PeteTimesSix.CompactHediffs.Rimworld.UI_compat
 				{
 					foreach(Hediff hediff in hediffs)
 					{
-						//Log.Message(" care for " + hediff.Label + " " + hediff.loadID + " removed");
-
 						hediffCares.Remove(hediff);
 					}
 				}, CustomHealthCardUtility.value_smartMedicine_careTextures[(int)defaultCare], Color.white));
@@ -55,8 +51,6 @@ namespace PeteTimesSix.CompactHediffs.Rimworld.UI_compat
 					{
 						foreach (Hediff hediff in hediffs)
 						{
-							//Log.Message(" care for " + hediff.Label + " " + hediff.loadID + " set to " + mc);
-
 							hediffCares[hediff] = mc;
 						}
 					}, CustomHealthCardUtility.value_smartMedicine_careTextures[(int)mc], Color.white));
@@ -74,8 +68,6 @@ namespace PeteTimesSix.CompactHediffs.Rimworld.UI_compat
 			{
 				if (h.TendableNow(true) && hediffCares.TryGetValue(h, out MedicalCareCategory heCare))
 				{
-					//Log.Message(" care for " +h.Label + " " +h.loadID + " is " + heCare);
-
 					care = heCare > care ? heCare : care;
 					maxCareHediff = h;
 				}

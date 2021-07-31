@@ -242,6 +242,12 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 						if (hasImmunity || hasSeverity)
 							hediffTotalHeight += settings.internalBarHeight;
 					}
+					if (settings.showCumulativeThreatment)
+					{
+						var tendQualityRequired = (tendDurationComp?.props as HediffCompProperties_TendDuration)?.disappearsAtTotalTendQuality;
+						if (!(tendDurationComp == null || !tendQualityRequired.HasValue || tendQualityRequired.Value <= 0))
+							hediffTotalHeight += settings.internalBarHeight;
+					}
 				}
 			}
 
@@ -800,6 +806,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 						var alphaMult = Pulser.PulseBrightness(0.5f + bloodlossSpeed * 0.75f, 0.5f);
 						commonColor.a *= alphaMult;
 					}
+					commonColor = hediffColor;
 					commonTexture = Textures.Bar_Ragged;
 				}
 				else
@@ -843,11 +850,11 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				if (!settings.severityBarHighContrast)
 				{
 					if(commonTexture == TexUI.FastFillTex)
-						commonColor.a = 0.75f;
+						commonColor.a *= 0.75f;
 					if (severityTexture == TexUI.FastFillTex)
-						severityColor.a = 0.75f;
+						severityColor.a *= 0.75f;
 					if (immunityTexture == TexUI.FastFillTex)
-						immunityColor.a = 0.75f;
+						immunityColor.a *= 0.75f;
 				}
 
 
@@ -855,42 +862,42 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				{
 					GUI.color = commonColor;
 					var drawnRect = commonRect.Value;
-					float texScale = commonTexture.height / settings.internalBarHeight;
+					float texScale = commonTexture.height / (float)settings.internalBarHeight;
 					GUI.DrawTextureWithTexCoords(drawnRect, commonTexture, new Rect(0,0, texScale * (drawnRect.width / commonTexture.width), texScale * (drawnRect.height / commonTexture.height)));
 				}
 				if (commonRectMirror.HasValue)
 				{
 					GUI.color = commonColor;
 					var drawnRect = commonRectMirror.Value;
-					float texScale = commonTexture.height / settings.internalBarHeight;
+					float texScale = commonTexture.height / (float)settings.internalBarHeight;
 					GUI.DrawTextureWithTexCoords(drawnRect, commonTexture, new Rect(0, 0, texScale * (drawnRect.width / commonTexture.width), texScale * (drawnRect.height / commonTexture.height)));
 				}
 				if (severityRect.HasValue)
 				{
 					GUI.color = severityColor;
 					var drawnRect = severityRect.Value;
-					float texScale = severityTexture.height / settings.internalBarHeight;
+					float texScale = severityTexture.height / (float)settings.internalBarHeight;
 					GUI.DrawTextureWithTexCoords(drawnRect, severityTexture, new Rect(0, 0, texScale * (drawnRect.width / severityTexture.width), texScale * (drawnRect.height / severityTexture.height)));
 				}
 				if (severityRectMirror.HasValue)
 				{
 					GUI.color = severityColor;
 					var drawnRect = severityRectMirror.Value;
-					float texScale = severityTexture.height / settings.internalBarHeight;
+					float texScale = severityTexture.height / (float)settings.internalBarHeight;
 					GUI.DrawTextureWithTexCoords(drawnRect, severityTexture, new Rect(0, 0, texScale * (drawnRect.width / severityTexture.width), texScale * (drawnRect.height / severityTexture.height)));
 				}
 				if (immunityRect.HasValue)
 				{
 					GUI.color = immunityColor;
 					var drawnRect = immunityRect.Value;
-					float texScale = immunityTexture.height / settings.internalBarHeight;
+					float texScale = immunityTexture.height / (float)settings.internalBarHeight;
 					GUI.DrawTextureWithTexCoords(drawnRect, immunityTexture, new Rect(0, 0, texScale * (drawnRect.width / immunityTexture.width), texScale * (drawnRect.height / immunityTexture.height)));
 				}
 				if (immunityRectMirror.HasValue)
 				{
 					GUI.color = immunityColor;
 					var drawnRect = immunityRectMirror.Value;
-					float texScale = immunityTexture.height / settings.internalBarHeight;
+					float texScale = immunityTexture.height / (float)settings.internalBarHeight;
 					GUI.DrawTextureWithTexCoords(drawnRect, immunityTexture, new Rect(0, 0, texScale * (drawnRect.width / immunityTexture.width), texScale * (drawnRect.height / immunityTexture.height)));
 				}
 
@@ -907,78 +914,77 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			var tendQualityRequired = (tendDurationComp?.props as HediffCompProperties_TendDuration)?.disappearsAtTotalTendQuality;
 			if (tendDurationComp == null || !tendQualityRequired.HasValue || tendQualityRequired.Value <= 0)
 				return 0;
-			var tendedFraction = tendDurationComp.tendQuality / tendQualityRequired.Value;
+			var tendedFraction = tendDurationComp.GetTotalTendQuality() / tendQualityRequired.Value;
+			if (tendedFraction > 1)
+				tendedFraction = 0;
 
 			Color hediffColor = GetHediffColor(settings, hediff);
 
+			GUI.color = Color.black;
+			GUI.DrawTexture(barRect, Textures.translucentWhite);
+
+			Rect? immunityRect = null;
+			Rect? immunityRectMirror = null;
+			Color immunityColor = settings.severityBarHighContrast ? BluishGreen : CyanWhite;
+			Texture2D immunityTexture = Textures.Bar_PillBig;
+
+			if (!settings.severityBarHighContrast)
 			{
-				GUI.color = Color.black;
-				GUI.DrawTexture(barRect, Textures.translucentWhite);
-
-				Rect? immunityRect = null;
-				Rect? immunityRectMirror = null;
-				Color immunityColor = settings.severityBarHighContrast ? BluishGreen : CyanWhite;
-				Texture2D immunityTexture = Textures.Bar_PillBig;
-
-				if (!settings.severityBarHighContrast)
-				{
-					immunityColor.a = 0.75f;
-				}
-
-				switch (settings.severityBarMode)
-				{
-					case CompactHediffs_Settings.SeverityBarMode.LeftToRight:
-						immunityRect = new Rect(barRect.x, barRect.y, barRect.width * tendedFraction, settings.internalBarHeight).Rounded();
-						break;
-					case CompactHediffs_Settings.SeverityBarMode.EdgeToMiddle:
-						{
-							var midRect = new Rect(barRect.x + ((barRect.width / 2f) - 1f), barRect.y, 2f, settings.internalBarHeight).Rounded();
-							GUI.color = settings.separatorNightMode ? Color.black : Color.grey;
-							GUI.DrawTexture(midRect, TexUI.FastFillTex);
-
-							var width = barRect.width * (tendedFraction / 2f);
-							immunityRect = new Rect(barRect.x, barRect.y, width, settings.internalBarHeight).Rounded();
-							immunityRectMirror = new Rect(barRect.x + (barRect.width - width), barRect.y, width, settings.internalBarHeight).Rounded();
-						}
-						break;
-					case CompactHediffs_Settings.SeverityBarMode.MiddleToEdge:
-						{
-							immunityRect = new Rect(barRect.x + ((barRect.width * tendedFraction) / 2f), barRect.y, barRect.width * tendedFraction, settings.internalBarHeight).Rounded();
-						}
-						break;
-				}
-
-				bool canBeTendedNow = !hediff.IsPermanent() && !hediff.pawn.Dead && hediff.TendableNow(false);
-				bool needsTendingNow = canBeTendedNow && tendDurationComp != null && tendDurationComp.tendTicksLeft <= 0;
-				if (canBeTendedNow)
-				{
-					var alphaMult = needsTendingNow ? Pulser.PulseBrightness(2f, 0.5f) : Pulser.PulseBrightness(1f, 0.5f);
-					immunityColor.a *= alphaMult;
-				}
-
-				if (!settings.severityBarTextured)
-				{
-					immunityTexture = TexUI.FastFillTex;
-				}
-				GUI.color = immunityColor;
-				if (immunityRect.HasValue)
-				{
-					var drawnRect = immunityRect.Value;
-					float texScale = immunityTexture.height / settings.internalBarHeight;
-					GUI.DrawTextureWithTexCoords(drawnRect, immunityTexture, new Rect(0, 0, texScale * (drawnRect.width / immunityTexture.width), texScale * (drawnRect.height / immunityTexture.height)));
-				}
-				if (immunityRectMirror.HasValue)
-				{
-					var drawnRect = immunityRectMirror.Value;
-					float texScale = immunityTexture.height / settings.internalBarHeight;
-					GUI.DrawTextureWithTexCoords(drawnRect, immunityTexture, new Rect(0, 0, texScale * (drawnRect.width / immunityTexture.width), texScale * (drawnRect.height / immunityTexture.height)));
-				}
-
-				GUI.color = Color.white;
-				return settings.internalBarHeight;
+				immunityColor.a *= 0.75f;
 			}
 
-			return 0;
+			switch (settings.severityBarMode)
+			{
+				case CompactHediffs_Settings.SeverityBarMode.LeftToRight:
+					immunityRect = new Rect(barRect.x, barRect.y, barRect.width * tendedFraction, settings.internalBarHeight).Rounded();
+					break;
+				case CompactHediffs_Settings.SeverityBarMode.EdgeToMiddle:
+					{
+						var midRect = new Rect(barRect.x + ((barRect.width / 2f) - 1f), barRect.y, 2f, settings.internalBarHeight).Rounded();
+						GUI.color = settings.separatorNightMode ? Color.black : Color.grey;
+						GUI.DrawTexture(midRect, TexUI.FastFillTex);
+
+						var width = barRect.width * (tendedFraction / 2f);
+						immunityRect = new Rect(barRect.x, barRect.y, width, settings.internalBarHeight).Rounded();
+						immunityRectMirror = new Rect(barRect.x + (barRect.width - width), barRect.y, width, settings.internalBarHeight).Rounded();
+					}
+					break;
+				case CompactHediffs_Settings.SeverityBarMode.MiddleToEdge:
+					{
+						immunityRect = new Rect(barRect.x + ((barRect.width * tendedFraction) / 2f), barRect.y, barRect.width * tendedFraction, settings.internalBarHeight).Rounded();
+					}
+					break;
+			}
+
+			bool canBeTendedNow = !hediff.IsPermanent() && !hediff.pawn.Dead && hediff.TendableNow(false);
+			bool needsTendingNow = canBeTendedNow && tendDurationComp != null && tendDurationComp.tendTicksLeft <= 0;
+			if (canBeTendedNow)
+			{
+				var alphaMult = needsTendingNow ? Pulser.PulseBrightness(2f, 0.5f) : Pulser.PulseBrightness(1f, 0.5f);
+				immunityColor.a *= alphaMult;
+			}
+
+			if (!settings.severityBarTextured)
+			{
+				immunityTexture = TexUI.FastFillTex;
+			}
+			GUI.color = immunityColor;
+			if (immunityRect.HasValue)
+			{
+				var drawnRect = immunityRect.Value;
+				float texScale = immunityTexture.height / (float)settings.internalBarHeight;
+
+				GUI.DrawTextureWithTexCoords(drawnRect, immunityTexture, new Rect(0, 0, texScale * (drawnRect.width / immunityTexture.width), texScale * (drawnRect.height / immunityTexture.height)));
+			}
+			if (immunityRectMirror.HasValue)
+			{
+				var drawnRect = immunityRectMirror.Value;
+				float texScale = immunityTexture.height / (float)settings.internalBarHeight;
+				GUI.DrawTextureWithTexCoords(drawnRect, immunityTexture, new Rect(0, 0, texScale * (drawnRect.width / immunityTexture.width), texScale * (drawnRect.height / immunityTexture.height)));
+			}
+
+			GUI.color = Color.white;
+			return settings.internalBarHeight;
 		}
 
 		private static float GetMaxSeverityForHediff(Hediff hediff)
