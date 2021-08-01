@@ -69,8 +69,8 @@
 	<settings_severityBarHighContrast>Severity bars high contrast</settings_severityBarHighContrast>
 	<settings_severityBarHighContrast_tooltip>Severity/Immunity bar uses a high contrast color scheme (green is good, red is bad)</settings_severityBarHighContrast_tooltip>
 	
-	<settings_showCumulativeThreatment>Show cumulative threatment bars</settings_showCumulativeThreatment>
-	<settings_showCumulativeThreatment_tooltip>Show progress bars for conditions that require a set amount of threatment quality to cure</settings_showCumulativeThreatment_tooltip>
+	<settings_showCumulativeThreatment>Show cumulative treatment bars</settings_showCumulativeThreatment>
+	<settings_showCumulativeThreatment_tooltip>Show progress bars for conditions that require a set amount of treatment quality to cure</settings_showCumulativeThreatment_tooltip>
 	
 	<settings_showHiddenProgressConditions>Show hidden progress condition bars</settings_showHiddenProgressConditions>
 	<settings_showHiddenProgressConditions_tooltip>Show progress bars for conditions with progress hidden in vanilla Rimworld</settings_showHiddenProgressConditions_tooltip>
