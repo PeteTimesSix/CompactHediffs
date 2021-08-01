@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+	<CompactHediffs_ModTitle>Compact Hediffs</CompactHediffs_ModTitle>
+	
+	<settings_selectExamplePawnIngame>미리보기를 하려면 게임 안에서 폰을 선택하세요.</settings_selectExamplePawnIngame>
+	
+	<settings_IsEnabled>활성화</settings_IsEnabled>
+	<settings_IsEnabled_tooltip>활성화</settings_IsEnabled_tooltip>
+	
+	<settings_replacingPartInBodypart>이식물 왼쪽에 표시</settings_replacingPartInBodypart>
+	<settings_replacingPartInBodypart_tooltip>신체 부위를 대체하는 이식물을 왼쪽 부위 표시에 넣습니다.</settings_replacingPartInBodypart_tooltip>
+	
+	<settings_italicizeMissing>잃은 신체 부위 기울이기</settings_italicizeMissing>
+	<settings_italicizeMissing_tooltip>잃은 신체 부위 기울이기</settings_italicizeMissing_tooltip>
+	
+	<settings_evenOddHighlights>행 강조</settings_evenOddHighlights>
+	<settings_evenOddHighlights_tooltip>바닐라처럼 짝수 행을 강조합니다.</settings_evenOddHighlights_tooltip>
+	
+	<settings_verticalSeparator>구분선(세로)</settings_verticalSeparator>
+	<settings_verticalSeparator_tooltip>신체 부위 표시와 그 상태 사이에 세로 구분선을 그립니다.</settings_verticalSeparator_tooltip>
+	
+	<settings_horizontalSeparator>구분선(가로)</settings_horizontalSeparator>
+	<settings_horizontalSeparator_tooltip>신체 부위들 사이에 가로 구분선을 그립니다.</settings_horizontalSeparator_tooltip>
+	
+	<settings_internalSeparator>구분선(내부)</settings_internalSeparator>
+	<settings_internalSeparator_tooltip>각각의 상태 사이에 가로 구분선을 그립니다.</settings_internalSeparator_tooltip>
+	
+	<settings_separatorNightMode>어두운 구분선</settings_separatorNightMode>
+	<settings_separatorNightMode_tooltip>구분선을 회색 대신 검은색으로 표시합니다.</settings_separatorNightMode_tooltip>
+	
+	<settings_bodypartHealthbars>체력 막대</settings_bodypartHealthbars>
+	<settings_bodypartHealthbars_tooltip>신체 부위에 대해 체력 막대를 표시합니다.</settings_bodypartHealthbars_tooltip>
+	<settings_healthBarPosition>체력 막대 위치</settings_healthBarPosition>
+	<settings_healthBarPosition_tooltip>체력 막대의 위치입니다.</settings_healthBarPosition_tooltip>
+	
+	<settings_tendPrioritySort>치료 우선순위로 정렬</settings_tendPrioritySort>
+	<settings_tendPrioritySort_tooltip>신체 부위 내의 상태를 치료 우선순위로 정렬합니다.</settings_tendPrioritySort_tooltip>
+	
+	<settings_bleedingIcons>맞춤형 출혈 아이콘</settings_bleedingIcons>
+	<settings_bleedingIcons_tooltip>바닐라 출혈 아이콘을 이 모드의 출혈 아이콘으로 대체합니다.</settings_bleedingIcons_tooltip>
+	
+	<settings_tendingIcons>맞춤형 치료 품질 아이콘</settings_tendingIcons>
+	<settings_tendingIcons_tooltip>바닐라 치료 품질 아이콘을 이 모드의 치료 품질 아이콘으로 대체합니다.</settings_tendingIcons_tooltip>
+	
+	<settings_bloodlossSpecialHandling>맞춤형 혈액 손실 처리</settings_bloodlossSpecialHandling>
+	<settings_bloodlossSpecialHandling_tooltip>혈액 손실의 특별한 경우를 처리합니다(심각도에 따라 바뀌는 색상, 손실 속도에 따른 깜빡이는 속도)</settings_bloodlossSpecialHandling_tooltip>
+	
+	<settings_extraTabWidth>건강 탭 너비 증가</settings_extraTabWidth>
+	<settings_extraTabHeight>건강 탭 너비 증가</settings_extraTabHeight>
+	
+	<settings_severityBars>심각도/항체 막대</settings_severityBars>
+	<settings_severityBars_tooltip>심각도/항체 진행 상황을 표시하는 막대를 그립니다.</settings_severityBars_tooltip>
+	
+	<SeverityBarMode_Off>끔</SeverityBarMode_Off>
+	<SeverityBarMode_LeftToRight>왼쪽에서 오른쪽으로</SeverityBarMode_LeftToRight>
+	<SeverityBarMode_EdgeToMiddle>가장자리에서 가운데로</SeverityBarMode_EdgeToMiddle>
+	<SeverityBarMode_MiddleToEdge>가운데에서 가장자리로</SeverityBarMode_MiddleToEdge>
+	<SeverityBarMode_Off_tooltip>비활성화</SeverityBarMode_Off_tooltip>
+	<SeverityBarMode_LeftToRight_tooltip>왼쪽에서 오른쪽으로 늘어나는 막대 하나입니다.</SeverityBarMode_LeftToRight_tooltip>
+	<SeverityBarMode_EdgeToMiddle_tooltip>가장자리에서 시작해서 완전히 진행되면 중점까지 늘어나는 별개의 두 막대입니다.</SeverityBarMode_EdgeToMiddle_tooltip>
+	<SeverityBarMode_MiddleToEdge_tooltip>가운데에서 시작해서 완전히 진행되면 가장자리까지 늘어나는 별개의 두 막대입니다.</SeverityBarMode_MiddleToEdge_tooltip>
+
+	<settings_severityBarPosition>심각도 막대 위치</settings_severityBarPosition>
+	<settings_severityBarPosition_tooltip>심각도 막대의 위치입니다.</settings_severityBarPosition_tooltip>
+	
+	<settings_severityBarTextured>막대 텍스쳐</settings_severityBarTextured>
+	<settings_severityBarTextured_tooltip>막대가 텍스쳐를 사용합니다.</settings_severityBarTextured_tooltip>
+	
+	<settings_severityBarHighContrast>고대비 심각도 막대</settings_severityBarHighContrast>
+	<settings_severityBarHighContrast_tooltip>심각도/항체 막대가 고대비 색상을 사용합니다(초록은 좋음, 빨강은 나쁨)</settings_severityBarHighContrast_tooltip>
+	
+	<settings_showCumulativeThreatment>누적 치료 품질 막대 보이기</settings_showCumulativeThreatment>
+	<settings_showCumulativeThreatment_tooltip>나으려면 정해진 치료 품질이 필요한 상태에 대한 진행 막대를 보입니다.</settings_showCumulativeThreatment_tooltip>
+	
+	<settings_showHiddenProgressConditions>숨겨진 진행 상황 막대 보이기</settings_showHiddenProgressConditions>
+	<settings_showHiddenProgressConditions_tooltip>바닐라 림월드에서는 숨겨진 진행 상황이 있는 상태에 대한 진행 막대를 보입니다.</settings_showHiddenProgressConditions_tooltip>
+	
+
+	<BarPosition_Above>위</BarPosition_Above>
+	<BarPosition_Behind>뒤</BarPosition_Behind>
+	<BarPosition_Below>아래</BarPosition_Below>
+	<BarPosition_Above_tooltip>막대를 글자 위에 그립니다.</BarPosition_Above_tooltip>
+	<BarPosition_Behind_tooltip>막대를 글자 뒤에 그립니다.</BarPosition_Behind_tooltip>
+	<BarPosition_Below_tooltip>막대를 글자 아래에 그립니다.</BarPosition_Below_tooltip>
+</LanguageData>
