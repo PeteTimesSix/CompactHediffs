@@ -951,7 +951,8 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					break;
 				case CompactHediffs_Settings.SeverityBarMode.MiddleToEdge:
 					{
-						immunityRect = new Rect(barRect.x + ((barRect.width * tendedFraction) / 2f), barRect.y, barRect.width * tendedFraction, settings.internalBarHeight).Rounded();
+						var half = (barRect.width / 2f);
+						immunityRect = new Rect(barRect.x + half - (half * tendedFraction), barRect.y, barRect.width * tendedFraction, settings.internalBarHeight).Rounded();
 					}
 					break;
 			}
