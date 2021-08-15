@@ -499,6 +499,11 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 						Rect barRect = new Rect(column_bodypartWidth, currentY + innerY, hediffColumnWidth, settings.internalBarHeight).Rounded();
 						int extraHeight = DrawSeverityBar(settings, barRect, hediff);
 						innerY += extraHeight;
+						if (settings.showCumulativeThreatment)
+						{
+							Rect cumulativeBarRect = new Rect(column_bodypartWidth, currentY + innerY, hediffColumnWidth, settings.internalBarHeight).Rounded();
+							innerY += DrawCumulativeThreatmentBar(settings, cumulativeBarRect, hediff);
+						}
 						fullHediffRect.height += extraHeight;
 					}
 				}
