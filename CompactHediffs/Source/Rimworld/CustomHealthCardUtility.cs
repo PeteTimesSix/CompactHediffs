@@ -31,6 +31,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 		public static readonly int BleedIconWidth = 15;
 		public static readonly int TendIconWidth = 15;
 		public static readonly int InfoIconWidth = 10;
+		public static readonly int DevRemoveButtonWidth = 20;
 
 		public static readonly int SmartMedicineIconWidth = 20;
 		public static readonly int SmartMedicineIconHeight = 20;
@@ -421,9 +422,23 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 				int iconOffset = (int)Math.Max((fullHediffRect.height - IconHeight) / 2f, 0);
 
+				//draw dev remove button
+				if (DebugSettings.godMode && Current.ProgramState == ProgramState.Playing)
+				{
+					Rect iconRect = new Rect(rowRect.width - DevRemoveButtonWidth, fullHediffRect.y + iconOffset, DevRemoveButtonWidth, DevRemoveButtonWidth).Rounded();
+					TooltipHandler.TipRegion(iconRect, () => "DEV: Remove hediff", 1071045645);
+					if (GUI.Button(iconRect, TexButton.DeleteX))
+					{
+						foreach(var hediff in grouping)
+							pawn.health.RemoveHediff(hediff);
+					}
+					widthAccumulator += iconRect.width;
+				}
+
+
 				//draw info button
 				{
-					Rect iconRect = new Rect(rowRect.width - (IconHeight / 2f), fullHediffRect.y + iconOffset, IconHeight / 2f, IconHeight).Rounded();
+					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + (IconHeight / 2f)), fullHediffRect.y + iconOffset, IconHeight / 2f, IconHeight).Rounded();
 					CustomInfoCardButtonWidget.CustomInfoCardButton(iconRect, representativeHediff);
 					widthAccumulator += iconRect.width;
 				}
@@ -585,6 +600,8 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 		{
 			count = 0;
 			int iconsWidth = InfoIconWidth;
+			if (Prefs.DevMode && Current.ProgramState == ProgramState.Playing)
+				iconsWidth += DevRemoveButtonWidth;
 			foreach (Hediff diff in grouping)
 			{
 				if (diff.StateIcon.HasValue)
