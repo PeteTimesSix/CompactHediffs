@@ -316,45 +316,52 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				column_bodypartWidth += settings.verticalSeparatorWidth;
 			}
 
-			if (part == null)
+            int tooltipIDOffset = 0;
+            if (part == null)
 			{
 				Widgets.Label(new Rect(0f, currentY, bodypartLabelWidth, 100f), bodyPartText);
 			}
 			else
 			{
 				Widgets.Label(new Rect(0f, currentY, bodypartLabelWidth, 100f), bodyPartText);
-				if (replacingPart != null)
+
+                TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => method_GetTooltip.GetValue<string>(pawn, part), (int)currentY + 7857 + tooltipIDOffset, TooltipPriority.Pawn));
+                tooltipIDOffset++;
+
+                if (replacingPart != null)
 				{
 					GUI.color = Color.white;
 					int iconOffset = (int)Math.Max((bodyPartLabelHeight - IconHeight) / 2f, 0);
 					Rect iconRect = new Rect(bodypartLabelWidth, currentY + iconOffset, IconHeight / 2f, IconHeight).Rounded();
 					CustomInfoCardButtonWidget.CustomInfoCardButton(iconRect, replacingPart);
-				}
+
+					var justColumnRect = wholeEntryRect.LeftPartPixels(column_bodypartWidth);
+                    if (Mouse.IsOver(justColumnRect))
+                    {
+                        if (replacingPart != null)
+                        {
+                            TooltipHandler.TipRegion(justColumnRect, new TipSignal(() => replacingPart.GetTooltip(pawn, field_showHediffsDebugInfo.Value), (int)currentY + 7857 + tooltipIDOffset, TooltipPriority.Pawn));
+                            tooltipIDOffset++;
+
+                            if (CompactHediffsMod.pawnmorpherLoaded && method_pawnmorpher_Tooltip != null)
+                            {
+                                //copied from Pawnmorph.PatchHealthCardUtilityDrawHediffRow
+                                string tooltip = method_pawnmorpher_Tooltip.GetValue<string>(new List<Hediff>() { replacingPart });
+                                if (tooltip != "")
+                                {
+                                    TooltipHandler.TipRegion(justColumnRect, new TipSignal(() => tooltip, (int)currentY + 117857 + tooltipIDOffset));
+                                    tooltipIDOffset++;
+                                }
+                            }
+                        }
+                    }
+                }
 			}
 
 			//moved up here so the tooltip is first... although thats probably what the TooltipPriority is for
-			int tooltipIDOffset = 0;
-			if (pawn != null)
+			/*if (pawn != null)
 			{
-				if (Mouse.IsOver(wholeEntryRect))
-				{
-					if (part != null)
-					{
-						TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => method_GetTooltip.GetValue<string>(pawn, part), (int)currentY + 7857 + tooltipIDOffset, TooltipPriority.Pawn));
-						tooltipIDOffset++;
-					}
-					if (CompactHediffsMod.pawnmorpherLoaded)
-					{
-						//copied from Pawnmorph.PatchHealthCardUtilityDrawHediffRow
-						string tooltip = method_pawnmorpher_Tooltip.GetValue<string>(diffs);
-						if (tooltip != "")
-						{
-							TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => tooltip, (int)currentY + 117857 + tooltipIDOffset));
-							tooltipIDOffset++;
-						}
-					}
-				}
-			}
+			}*/
 
 			int innerY = 0;
 
@@ -407,7 +414,33 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				Rect fullHediffRect = new Rect(column_bodypartWidth, currentY + innerY, rowRect.width - column_bodypartWidth, hediffTextHeight).Rounded();
 				Rect hediffLabelrect = new Rect(column_bodypartWidth, currentY + innerY, hediffLabelWidth, hediffTextHeight).Rounded();
 
-				GUI.color = GetHediffColor(settings, representativeHediff);
+				//do tooltips
+                if (Mouse.IsOver(fullHediffRect))
+                {
+					List<string> uniqueTooltips = new List<string>();
+					foreach(var individualHediff in grouping)
+					{
+                        string tooltip = individualHediff.GetTooltip(pawn, field_showHediffsDebugInfo.Value);
+						if(!string.IsNullOrWhiteSpace(tooltip))
+							uniqueTooltips.Add(tooltip);
+
+                        if (CompactHediffsMod.pawnmorpherLoaded && method_pawnmorpher_Tooltip != null)
+                        {
+                            //copied from Pawnmorph.PatchHealthCardUtilityDrawHediffRow
+                            tooltip = method_pawnmorpher_Tooltip.GetValue<string>(new List<Hediff>() { individualHediff });
+                            if (!string.IsNullOrWhiteSpace(tooltip))
+								uniqueTooltips.Add(tooltip);
+                        }
+                    }
+
+					foreach(var tooltip in uniqueTooltips)
+					{
+                        TooltipHandler.TipRegion(fullHediffRect, new TipSignal(() => tooltip, (int)currentY + 117857 + tooltipIDOffset));
+                        tooltipIDOffset++;
+                    }
+                }
+
+                GUI.color = GetHediffColor(settings, representativeHediff);
 				//this is where smartMedicine transpiles its float menu into, so lets follow suit
 				Widgets.Label(hediffLabelrect, hediffLabel);
 				GUI.color = Color.white;
@@ -530,12 +563,6 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					GUI.DrawTexture(internalSeparatorRect, TexUI.FastFillTex);
 					innerY += settings.internalSeparatorHeight;
 					fullHediffRect.height += settings.internalSeparatorHeight;
-				}
-
-				foreach(Hediff localHediff in hediffsByPriority) 
-				{
-					TooltipHandler.TipRegion(fullHediffRect, new TipSignal(() => localHediff.GetTooltip(pawn, field_showHediffsDebugInfo.Value), (int)currentY + 7857 + tooltipIDOffset, TooltipPriority.Default));
-					tooltipIDOffset++;
 				}
 			}
 			GUI.color = Color.white;
