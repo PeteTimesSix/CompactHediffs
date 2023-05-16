@@ -10,26 +10,22 @@ using System.Reflection;
 using RimWorld;
 using PeteTimesSix.CompactHediffs.Rimworld;
 using PeteTimesSix.CompactHediffs.HarmonyPatches;
+using PeteTimesSix.CompactHediffs.ModCompat;
 
 namespace PeteTimesSix.CompactHediffs
 {
     public class CompactHediffsMod : Mod
     {
-        public static CompactHediffs_Settings settings;
-        public static bool pawnmorpherLoaded = false;
-        public static bool eliteBionicsLoaded = false;
-        public static bool smartMedicineLoaded = false;
+        public static CompactHediffs_Settings Settings { get; set; }
+        public static Harmony Harmony { get; set; }
 
         public CompactHediffsMod(ModContentPack content) : base(content)
         {
-            settings = GetSettings<CompactHediffs_Settings>();
+            Settings = GetSettings<CompactHediffs_Settings>();
 
-            var harmony = new Harmony("PeteTimesSix.CompactHediffs");
-            harmony.PatchAll(Assembly.GetExecutingAssembly());
+            Harmony = new Harmony("PeteTimesSix.CompactHediffs");
+            Harmony.PatchAll();
 
-            pawnmorpherLoaded = ModLister.GetActiveModWithIdentifier("tachyonite.pawnmorpher") != null | ModLister.GetActiveModWithIdentifier("tachyonite.pawnmorpherpublic") != null;
-            eliteBionicsLoaded = ModLister.GetActiveModWithIdentifier("V1024.EBFramework") != null;
-            smartMedicineLoaded = ModLister.GetActiveModWithIdentifier("Uuugggg.SmartMedicine") != null;
         }
 
         public override string SettingsCategory()
@@ -37,10 +33,19 @@ namespace PeteTimesSix.CompactHediffs
             return "CompactHediffs_ModTitle".Translate();
         }
 
-        public override void DoSettingsWindowContents(Rect inRect) 
+        public override void DoSettingsWindowContents(Rect inRect)
         {
-            settings.DoSettingsWindowContents(inRect);
             base.DoSettingsWindowContents(inRect);
+            Settings.DoSettingsWindowContents(inRect);
         }
 	}
+
+    [StaticConstructorOnStartup]
+    public static class CompactHediffs_PostInit
+    {
+
+        static CompactHediffs_PostInit()
+        {
+        }
+    }
 }

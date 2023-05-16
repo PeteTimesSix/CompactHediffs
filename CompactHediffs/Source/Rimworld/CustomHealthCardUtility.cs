@@ -10,6 +10,8 @@ using UnityEngine;
 using Verse;
 using PeteTimesSix.CompactHediffs.Rimworld.UI;
 using PeteTimesSix.CompactHediffs.Rimworld.UI_compat;
+using static HarmonyLib.AccessTools;
+using PeteTimesSix.CompactHediffs.ModCompat;
 
 namespace PeteTimesSix.CompactHediffs.Rimworld
 {
@@ -39,121 +41,31 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 		//public static Traverse<float> field_lastMaxIconsTotalWidth;
 		//public static Traverse<float> field_scrollViewHeight;
 		//public static Traverse<Vector2> field_scrollPosition;
-		public static Traverse<bool> field_highlight;
-		public static Traverse<bool> field_showHediffsDebugInfo;
 
-		public static Traverse method_CanEntryBeClicked;
-		public static Traverse method_EntryClicked;
-		public static Traverse method_GetTooltip;
-		public static Traverse method_GetListPriority;
+		public static FieldRef<bool> highlight;
+		public static FieldRef<bool> showHediffsDebugInfo;
 
-		public static Traverse method_pawnmorpher_Tooltip;
-		public static Traverse method_eliteBionics_GetMaxHealth;
+		public delegate bool _canEntryBeClicked(IEnumerable<Hediff> diffs, Pawn pawn);
+		public delegate void _entryClicked(IEnumerable<Hediff> diffs, Pawn pawn);
+		public delegate string _getTooltip(Pawn pawn, BodyPartRecord part);
+		public delegate float _getListPriority(BodyPartRecord rec);
+		public static _canEntryBeClicked CanEntryBeClicked;
+		public static _entryClicked EntryClicked;
+		public static _getTooltip GetTooltip;
+		public static _getListPriority GetListPriority;
 
-		public static Texture2D[] value_smartMedicine_careTextures;
-		public static Traverse method_smartMedicine_LabelButton;
-		public static Traverse method_smartMedicine_PriorityCareComp_Get;
-		public static Traverse method_smartMedicine_GetPawnMedicalCareCategory_GetCare;
+
 
 		static CustomHealthCardUtility() 
 		{
-			//field_lastMaxIconsTotalWidth = Traverse.Create(typeof(HealthCardUtility)).Field<float>("lastMaxIconsTotalWidth");
-			//field_scrollViewHeight = Traverse.Create(typeof(HealthCardUtility)).Field<float>("scrollViewHeight");
-			//field_scrollPosition = Traverse.Create(typeof(HealthCardUtility)).Field<Vector2>("scrollPosition");
-			field_highlight = Traverse.Create(typeof(HealthCardUtility)).Field<bool>("highlight");
-			field_showHediffsDebugInfo = Traverse.Create(typeof(HealthCardUtility)).Field<bool>("showHediffsDebugInfo");
+			var healthCardType = typeof(HealthCardUtility);
+			highlight = StaticFieldRefAccess<bool>(AccessTools.Field(healthCardType, "highlight"));
+			showHediffsDebugInfo = StaticFieldRefAccess<bool>(AccessTools.Field(healthCardType, "showHediffsDebugInfo"));
 
-			method_CanEntryBeClicked = Traverse.Create(typeof(HealthCardUtility)).Method("CanEntryBeClicked", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn) });
-			method_EntryClicked = Traverse.Create(typeof(HealthCardUtility)).Method("EntryClicked", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn) });
-			method_GetTooltip = Traverse.Create(typeof(HealthCardUtility)).Method("GetTooltip", new Type[] { typeof(Pawn), typeof(BodyPartRecord) });
-			//method_GetTooltip = Traverse.Create(typeof(HealthCardUtility)).Method("GetTooltip", new Type[] { typeof(IEnumerable<Hediff>), typeof(Pawn), typeof(BodyPartRecord) });
-			method_GetListPriority = Traverse.Create(typeof(HealthCardUtility)).Method("GetListPriority", new Type[] { typeof(BodyPartRecord) });
-
-			if(!method_CanEntryBeClicked.MethodExists())
-				Log.Warning("could not access HealthCardUtility.CanEntryBeClicked");
-			if (!method_EntryClicked.MethodExists())
-				Log.Warning("could not access HealthCardUtility.EntryClicked");
-			if (!method_GetTooltip.MethodExists())
-				Log.Warning("could not access HealthCardUtility.GetTooltip");
-			if (!method_GetListPriority.MethodExists())
-				Log.Warning("could not access HealthCardUtility.GetListPriority");
-
-			if (CompactHediffsMod.pawnmorpherLoaded)
-			{
-				method_pawnmorpher_Tooltip = Traverse.CreateWithType("Pawnmorph.PatchHealthCardUtilityDrawHediffRow")?.Method("Tooltip", new Type[] { typeof(IEnumerable<Hediff>) });
-				if (!method_pawnmorpher_Tooltip.MethodExists())
-				{
-					Log.Warning("could not access Pawnmorph.PatchHealthCardUtilityDrawHediffRow.Tooltip");
-					method_pawnmorpher_Tooltip = null;
-				}
-			}
-			if (CompactHediffsMod.eliteBionicsLoaded)
-			{
-				//for the record, Vectorial1024, this is really rather rude.
-				method_eliteBionics_GetMaxHealth = Traverse.CreateWithType("EBF.VanillaExtender")?.Method("GetMaxHealth", new Type[] { typeof(BodyPartDef), typeof(Pawn), typeof(BodyPartRecord) });
-				if (!method_eliteBionics_GetMaxHealth.MethodExists())
-				{
-					Log.Warning("could not access EBF.VanillaExtender.GetMaxHealth");
-					method_eliteBionics_GetMaxHealth = null;
-				}
-			}
-			if (CompactHediffsMod.smartMedicineLoaded) 
-			{
-				value_smartMedicine_careTextures = Traverse.Create(typeof(MedicalCareUtility)).Field<Texture2D[]>("careTextures").Value;
-
-				method_smartMedicine_LabelButton = Traverse.CreateWithType("SmartMedicine.HediffRowPriorityCare")?.Method("LabelButton", new Type[] { typeof(Rect), typeof(string), typeof(Hediff) });
-				if (!method_smartMedicine_LabelButton.MethodExists())
-				{
-					Log.Warning("could not access SmartMedicine.HediffRowPriorityCare.LabelButton");
-					method_smartMedicine_LabelButton = null;
-				}
-
-				method_smartMedicine_PriorityCareComp_Get = Traverse.CreateWithType("SmartMedicine.PriorityCareComp")?.Method("Get", new Type[] { });
-				if (!method_smartMedicine_PriorityCareComp_Get.MethodExists())
-				{
-					Log.Warning("could not access SmartMedicine.PriorityCareComp.Get");
-					method_smartMedicine_PriorityCareComp_Get = null;
-				}
-
-				method_smartMedicine_GetPawnMedicalCareCategory_GetCare = Traverse.CreateWithType("SmartMedicine.GetPawnMedicalCareCategory")?.Method("GetCare", new Type[] { typeof(Pawn) });
-				if (!method_smartMedicine_GetPawnMedicalCareCategory_GetCare.MethodExists())
-				{
-					Log.Warning("could not access SmartMedicine.GetPawnMedicalCareCategory.GetCare");
-					method_smartMedicine_GetPawnMedicalCareCategory_GetCare = null;
-				}
-			}
-		}
-
-		public static Hediff GetReplacingPart(IEnumerable<Hediff> diffs, BodyPartRecord part) 
-		{
-			var replacingPart = diffs.Where(x => x is Hediff_AddedPart).FirstOrDefault();
-			if (replacingPart != null)
-				return replacingPart;
-
-			foreach (var diff in diffs)
-			{
-				if (diff.GetType().ToString() == "Pawnmorph.Hediff_AddedMutation")
-				{
-					Def def = diff.def;
-
-					//var traverse = Traverse.Create(diff);
-					var property_IsCoreMutation = Traverse.Create(diff).Property("IsCoreMutation");
-					if (property_IsCoreMutation.PropertyExists())
-					{
-						if (property_IsCoreMutation.GetValue<bool>())
-							return diff;
-					}
-					else
-					{
-						List<BodyPartDef> parts = Traverse.Create(def)?.Field<List<BodyPartDef>>("parts")?.Value;
-						//TODO: Remove this when Pawnmorpher updates
-						if (parts != null && parts.Count == 1 && parts[0] == part.def) //making an assumption here...
-							return diff;
-					}
-				}
-			}
-
-			return null;
+			CanEntryBeClicked = AccessTools.MethodDelegate<_canEntryBeClicked>(AccessTools.Method(healthCardType, "CanEntryBeClicked"));
+			EntryClicked = AccessTools.MethodDelegate<_entryClicked>(AccessTools.Method(healthCardType, "EntryClicked"));
+			GetTooltip = AccessTools.MethodDelegate<_getTooltip>(AccessTools.Method(healthCardType, "GetTooltip"));
+			GetListPriority = AccessTools.MethodDelegate<_getListPriority>(AccessTools.Method(healthCardType, "GetListPriority"));
 		}
 
 		public static void DrawHediffRow(Rect rowRect, Pawn pawn, IEnumerable<Hediff> diffs, ref float curY)
@@ -161,7 +73,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			rowRect = rowRect.Rounded();
 			int currentY = (int)curY;
 
-			var settings = CompactHediffsMod.settings;
+			var settings = CompactHediffsMod.Settings;
 
 
 			int column_bodypartWidth = (int)(rowRect.width * 0.375f);
@@ -325,7 +237,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			{
 				Widgets.Label(new Rect(0f, currentY, bodypartLabelWidth, 100f), bodyPartText);
 
-                TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => method_GetTooltip.GetValue<string>(pawn, part), (int)currentY + 7857 + tooltipIDOffset, TooltipPriority.Pawn));
+                TooltipHandler.TipRegion(wholeEntryRect, new TipSignal(() => GetTooltip(pawn, part), (int)currentY + 7857 + tooltipIDOffset, TooltipPriority.Pawn));
                 tooltipIDOffset++;
 
                 if (replacingPart != null)
@@ -340,14 +252,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
                     {
                         if (replacingPart != null)
                         {
-                            TooltipHandler.TipRegion(justColumnRect, new TipSignal(() => replacingPart.GetTooltip(pawn, field_showHediffsDebugInfo.Value), (int)currentY + 7857 + tooltipIDOffset, TooltipPriority.Pawn));
+                            TooltipHandler.TipRegion(justColumnRect, new TipSignal(() => replacingPart.GetTooltip(pawn, showHediffsDebugInfo.Invoke()), (int)currentY + 7857 + tooltipIDOffset, TooltipPriority.Pawn));
                             tooltipIDOffset++;
 
-                            if (CompactHediffsMod.pawnmorpherLoaded && method_pawnmorpher_Tooltip != null)
+                            if (Pawnmorpher.active && Pawnmorpher.GetTooltip != null)
                             {
                                 //copied from Pawnmorph.PatchHealthCardUtilityDrawHediffRow
-                                string tooltip = method_pawnmorpher_Tooltip.GetValue<string>(new List<Hediff>() { replacingPart });
-                                if (tooltip != "")
+                                string tooltip = Pawnmorpher.GetTooltip(new List<Hediff>() { replacingPart });
+                                if (!string.IsNullOrWhiteSpace(tooltip))
                                 {
                                     TooltipHandler.TipRegion(justColumnRect, new TipSignal(() => tooltip, (int)currentY + 117857 + tooltipIDOffset));
                                     tooltipIDOffset++;
@@ -357,11 +269,6 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
                     }
                 }
 			}
-
-			//moved up here so the tooltip is first... although thats probably what the TooltipPriority is for
-			/*if (pawn != null)
-			{
-			}*/
 
 			int innerY = 0;
 
@@ -420,14 +327,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					List<string> uniqueTooltips = new List<string>();
 					foreach(var individualHediff in grouping)
 					{
-                        string tooltip = individualHediff.GetTooltip(pawn, field_showHediffsDebugInfo.Value);
+                        string tooltip = individualHediff.GetTooltip(pawn, showHediffsDebugInfo.Invoke());
 						if(!string.IsNullOrWhiteSpace(tooltip))
 							uniqueTooltips.Add(tooltip);
 
-                        if (CompactHediffsMod.pawnmorpherLoaded && method_pawnmorpher_Tooltip != null)
+                        if (Pawnmorpher.active && Pawnmorpher.GetTooltip != null)
                         {
                             //copied from Pawnmorph.PatchHealthCardUtilityDrawHediffRow
-                            tooltip = method_pawnmorpher_Tooltip.GetValue<string>(new List<Hediff>() { individualHediff });
+                            tooltip = Pawnmorpher.GetTooltip(new List<Hediff>() { individualHediff });
                             if (!string.IsNullOrWhiteSpace(tooltip))
 								uniqueTooltips.Add(tooltip);
                         }
@@ -444,9 +351,9 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				//this is where smartMedicine transpiles its float menu into, so lets follow suit
 				Widgets.Label(hediffLabelrect, hediffLabel);
 				GUI.color = Color.white;
-				if (CompactHediffsMod.smartMedicineLoaded)
+				if (SmartMedicine.active)
 				{
-					MedicalCareCategory defaultCare = method_smartMedicine_GetPawnMedicalCareCategory_GetCare.GetValue<MedicalCareCategory>(pawn);
+					MedicalCareCategory defaultCare = SmartMedicine.GetCare(pawn);
 					UI_SmartMedicine.AddSmartMedicineFloatMenuButton(fullHediffRect, hediffsByPriority, defaultCare);
 				}
 
@@ -531,10 +438,10 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				}
 
 				//draw Smart Medicine icon
-				if (CompactHediffsMod.smartMedicineLoaded)
+				if (SmartMedicine.active)
 				{
 					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + SmartMedicineIconWidth), fullHediffRect.y + iconOffset, SmartMedicineIconWidth, SmartMedicineIconHeight).Rounded();
-					MedicalCareCategory defaultCare = method_smartMedicine_GetPawnMedicalCareCategory_GetCare.GetValue<MedicalCareCategory>(pawn);
+					MedicalCareCategory defaultCare = SmartMedicine.GetCare(pawn);
 					UI_SmartMedicine.DrawSmartMedicineIcon(iconRect, defaultCare, hediffsByPriority.ToList());
 				}
 
@@ -571,16 +478,34 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 			if (pawn != null)
 			{
-				if (Widgets.ButtonInvisible(wholeEntryRect, method_CanEntryBeClicked.GetValue<bool>(diffs, pawn)))
+				if (Widgets.ButtonInvisible(wholeEntryRect, CanEntryBeClicked(diffs, pawn)))
 				{
-					method_EntryClicked.GetValue(diffs, pawn);
+					EntryClicked(diffs, pawn);
 				}
 			}
 
 			curY = (float)currentY;
 		}
 
-        private static string MakeBodyPartText(Pawn pawn, BodyPartRecord part, Hediff replacingPart)
+		public static Hediff GetReplacingPart(IEnumerable<Hediff> hediffs, BodyPartRecord part)
+		{
+			var replacingPart = hediffs.Where(x => x is Hediff_AddedPart).FirstOrDefault();
+			if (replacingPart != null)
+				return replacingPart;
+
+			if (Pawnmorpher.active)
+			{
+				foreach (var hediff in hediffs)
+				{
+					if (Pawnmorpher.coreMutationHediffDefs.Contains(hediff.def))
+						return hediff;
+				}
+			}
+
+			return null;
+		}
+		
+		public static string MakeBodyPartText(Pawn pawn, BodyPartRecord part, Hediff replacingPart)
 		{
 			string bodyPartText;
 			if (part == null)
@@ -615,12 +540,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			return bodyPartText;
 		}
 
-		private static float getPartMaxHealth(Pawn pawn, BodyPartRecord part)
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Harmony patches targeting this name")]
+        private static float getPartMaxHealth(Pawn pawn, BodyPartRecord part)
 		{
-			if (!CompactHediffsMod.eliteBionicsLoaded)
+			if (!EBF.active)
 				return part.def.GetMaxHealth(pawn);
 			else
-				return method_eliteBionics_GetMaxHealth.GetValue<float>(part.def, pawn, part);
+				return EBF.GetMaxHealth_Cached(part.def, pawn, part);
 		}
 
 		private static int CalcIconsWidthForGrouping(IGrouping<HediffDef, Hediff> grouping, out int count)
@@ -633,7 +560,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 			{
 				if (diff.StateIcon.HasValue)
 				{
-					if (CompactHediffsMod.settings.tendingIcons && diff.StateIcon.Texture == Textures.Vanilla_TendedIcon_Well_General)
+					if (CompactHediffsMod.Settings.tendingIcons && diff.StateIcon.Texture == Textures.Vanilla_TendedIcon_Well_General)
 						iconsWidth += TendIconWidth;
 					else
 						iconsWidth += IconHeight;
@@ -641,13 +568,13 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				}
 				if (diff.Bleeding)
 				{
-					if (CompactHediffsMod.settings.bleedingIcons)
+					if (CompactHediffsMod.Settings.bleedingIcons)
 						iconsWidth += BleedIconWidth;
 					else
 						iconsWidth += IconHeight;
 					count++;
 				}
-				if (CompactHediffsMod.smartMedicineLoaded)
+				if (SmartMedicine.active)
 				{
 					iconsWidth += SmartMedicineIconWidth;
 					count++;
@@ -871,13 +798,6 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					}
 				}
 
-				/*if (!showsSeverity) 
-				{
-					commonColor.a *= 0.65f;
-					severityColor.a *= 0.65f;
-					immunityColor.a *= 0.65f;
-				}*/
-
 				if (!settings.severityBarTextured)
 				{
 					commonTexture = TexUI.FastFillTex;
@@ -889,12 +809,11 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					commonTexture = Textures.Bar_Malnutrition;
 					severityTexture = Textures.Bar_Malnutrition;
 				}
-				else if (CompactHediffsMod.pawnmorpherLoaded && hediff.GetType().ToString().Contains("Pawnmorph"))
+				else if (Pawnmorpher.active && Pawnmorpher.pawnmorpherHediffDefs.Contains(hediff.def))
 				{
 					commonTexture = Textures.Bar_DNA;
 					severityTexture = Textures.Bar_DNA;
 				}
-
 
 				if (!settings.severityBarHighContrast)
 				{
@@ -905,7 +824,6 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					if (immunityTexture == TexUI.FastFillTex)
 						immunityColor.a *= 0.75f;
 				}
-
 
 				if (commonRect.HasValue)
 				{
@@ -1065,12 +983,12 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 		public static void DoWholeRowHighlight(Rect rowRect)
 		{
-			if (field_highlight.Value)
+			if (highlight.Invoke())
 			{
 				GUI.color = StaticHighlightColor;
 				GUI.DrawTexture(rowRect, TexUI.HighlightTex);
 			}
-			field_highlight.Value = !field_highlight.Value;
+			highlight.Invoke() = !highlight.Invoke();
 			if (Mouse.IsOver(rowRect))
 			{
 				GUI.color = HighlightColor;
@@ -1080,7 +998,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 		public static IEnumerable<IGrouping<BodyPartRecord, Hediff>> ReorderHediffGroups(IEnumerable<IGrouping<BodyPartRecord, Hediff>> returned, Pawn pawn, bool showBloodLoss)
 		{
-			Func<BodyPartRecord, float> getListPriority = (BodyPartRecord rec) => method_GetListPriority.GetValue<float>(rec);
+			Func<BodyPartRecord, float> getListPriority = (BodyPartRecord rec) => GetListPriority(rec);
 
 			return returned.OrderByDescending(x => x.Max(i => i.TendableNow(true) ? i.TendPriority : -1)).ThenByDescending(i => getListPriority(i.First().Part));
 		}
