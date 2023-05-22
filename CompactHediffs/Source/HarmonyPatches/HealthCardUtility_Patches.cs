@@ -17,25 +17,13 @@ namespace PeteTimesSix.CompactHediffs.HarmonyPatches
     public static class HealthCardUtility_VisibleHediffGroupsInOrder
     {
         [HarmonyPostfix]
-        static IEnumerable<IGrouping<BodyPartRecord, Hediff>> HealthCardUtility_VisibleHediffGroupsInOrder_Postfix(IEnumerable<IGrouping<BodyPartRecord, Hediff>> returned, Pawn pawn, bool showBloodLoss)
+        public static IEnumerable<IGrouping<BodyPartRecord, Hediff>> HealthCardUtility_VisibleHediffGroupsInOrder_Postfix(IEnumerable<IGrouping<BodyPartRecord, Hediff>> returned, Pawn pawn, bool showBloodLoss)
         {
             returned = CustomHealthCardUtility.ReorderHediffGroups(returned, pawn, showBloodLoss);
             foreach(var group in returned) 
             {
                 yield return group;
             }
-
-			/*var method_getListPriority = Traverse.Create(typeof(HealthCardUtility)).Method("GetListPriority", new Type[] { typeof(BodyPartRecord) });
-			Func<BodyPartRecord, float> getListPriority = (BodyPartRecord rec) => method_getListPriority.GetValue<float>(rec);
-
-			var method_visibleHediffs = Traverse.Create(typeof(HealthCardUtility)).Method("VisibleHediffs", new Type[] { typeof(Pawn), typeof(bool) });
-			Func<Pawn, bool, IEnumerable<Hediff>> visibleHediffs = (Pawn p, bool s) => method_visibleHediffs.GetValue<IEnumerable<Hediff>>(p, s);
-
-			var grouping = visibleHediffs(pawn, showBloodLoss).GroupBy(x => x.Part).OrderByDescending(x => getListPriority(x.First().Part));
-			foreach (var group in grouping)
-			{
-				yield return group;
-			}*/
 		}
     }
 
@@ -77,15 +65,15 @@ namespace PeteTimesSix.CompactHediffs.HarmonyPatches
 
         public static float GetAlteredMult() 
         {
-            var settings = CompactHediffsMod.settings;
-            if (!settings.Enabled || settings.extraTabWidth < 1f)
+            var settings = CompactHediffsMod.Settings;
+            if (!settings.Enabled || settings.extraTabWidth < 1f || !ITab_Pawn_Health_Patches.hasInitialSize)
             {
                 return 0.375f;
             }
             else
             {
-                float width = ITab_Pawn_Health_Patches.initialSize?.x ?? 630f;
-                float curWidth = ITab_Pawn_Health_Patches.field_size?.Value.x ?? width + settings.extraTabWidth;
+                float width = ITab_Pawn_Health_Patches.initialSize.x;
+                float curWidth = ITab_Pawn_Health_Patches.GetSize().x;
                 return 0.375f * (width / curWidth);
             }
         }
@@ -95,9 +83,9 @@ namespace PeteTimesSix.CompactHediffs.HarmonyPatches
     public static class HealthCardUtility_DrawHediffRow
     {
         [HarmonyPrefix]
-        static bool HealthCardUtility_DrawHediffRow_DestructivePrefix(Rect rect, Pawn pawn, IEnumerable<Hediff> diffs, ref float curY)
+        public static bool HealthCardUtility_DrawHediffRow_DestructivePrefix(Rect rect, Pawn pawn, IEnumerable<Hediff> diffs, ref float curY)
         {
-            if (CompactHediffsMod.settings.Enabled)
+            if (CompactHediffsMod.Settings.Enabled)
             {
                 CustomHealthCardUtility.DrawHediffRow(rect, pawn, diffs, ref curY);
                 return false;

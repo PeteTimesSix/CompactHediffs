@@ -1,4 +1,5 @@
-﻿using RimWorld;
+﻿using PeteTimesSix.CompactHediffs.ModCompat;
+using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld.UI_compat
 			{
 				return;
 			}
-			Texture2D tex = CustomHealthCardUtility.value_smartMedicine_careTextures[(int)maxCare];
+			Texture2D tex = SmartMedicine.careTextures[(int)maxCare];
 			var iconWidth = CustomHealthCardUtility.SmartMedicineIconWidth;
 			var iconHeight = CustomHealthCardUtility.SmartMedicineIconHeight;
 			Rect rect = new Rect(2 * iconRect.x + iconRect.width - iconRect.x - iconWidth, iconRect.y, iconWidth, iconHeight);
@@ -34,7 +35,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld.UI_compat
 			if (Event.current.button == 1 && Widgets.ButtonInvisible(buttonRect) && hediffs.Any(h => h.TendableNow(true)))
 			{
 				List<FloatMenuOption> list = new List<FloatMenuOption>();
-				var hediffCares = CustomHealthCardUtility.method_smartMedicine_PriorityCareComp_Get.GetValue<Dictionary<Hediff, MedicalCareCategory>>();
+				var hediffCares = SmartMedicine.PriorityCareCompGet();
 				//Default care
 				list.Add(new FloatMenuOption("TD.DefaultCare".Translate(), delegate
 				{
@@ -42,18 +43,18 @@ namespace PeteTimesSix.CompactHediffs.Rimworld.UI_compat
 					{
 						hediffCares.Remove(hediff);
 					}
-				}, CustomHealthCardUtility.value_smartMedicine_careTextures[(int)defaultCare], Color.white));
+				}, SmartMedicine.careTextures[(int)defaultCare], Color.white));
 
 				for (int i = 0; i < 5; i++)
 				{
 					MedicalCareCategory mc = (MedicalCareCategory)i;
-					list.Add(new FloatMenuOption(mc.GetLabel(), delegate
+					list.Add(new FloatMenuOption(mc.GetLabel(), () =>
 					{
 						foreach (Hediff hediff in hediffs)
 						{
 							hediffCares[hediff] = mc;
 						}
-					}, CustomHealthCardUtility.value_smartMedicine_careTextures[(int)mc], Color.white));
+					}, SmartMedicine.careTextures[(int)mc], Color.white));
 				}
 				Find.WindowStack.Add(new FloatMenu(list));
 			}
@@ -63,7 +64,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld.UI_compat
 		{
 			care = MedicalCareCategory.NoCare;
 			Hediff maxCareHediff = null;
-			var hediffCares = CustomHealthCardUtility.method_smartMedicine_PriorityCareComp_Get.GetValue<Dictionary<Hediff, MedicalCareCategory>>();
+			var hediffCares =  SmartMedicine.PriorityCareCompGet();
 			foreach (Hediff h in hediffs)
 			{
 				if (h.TendableNow(true) && hediffCares.TryGetValue(h, out MedicalCareCategory heCare))
