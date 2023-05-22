@@ -47,6 +47,7 @@
     <Compile Include="HarmonyPatches\ITab_Pawn_Health_Patches.cs" />
     <Compile Include="HarmonyPatches\PlaySettings_Patches.cs" />
     <Compile Include="HarmonyPatches\HealthCardUtility_Patches.cs" />
+    <Compile Include="ModCompat\ChooseYourMedicine.cs" />
     <Compile Include="ModCompat\EBF.cs" />
     <Compile Include="ModCompat\Pawnmorpher.cs" />
     <Compile Include="ModCompat\SmartMedicine.cs" />

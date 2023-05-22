@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using Verse;
+using static PeteTimesSix.CompactHediffs.ModCompat.EBF;
 
 namespace PeteTimesSix.CompactHediffs.ModCompat
 {
@@ -29,11 +30,19 @@ namespace PeteTimesSix.CompactHediffs.ModCompat
 			active = ModLister.GetActiveModWithIdentifier("Uuugggg.SmartMedicine") != null;
 			if (active)
 			{
-				careTextures = AccessTools.StaticFieldRefAccess<Texture2D[]>(AccessTools.Field(typeof(MedicalCareUtility), "careTextures")).Invoke();
+                try
+                {
+                    careTextures = AccessTools.StaticFieldRefAccess<Texture2D[]>(AccessTools.Field(typeof(MedicalCareUtility), "careTextures")).Invoke();
 
-				LabelButton = AccessTools.MethodDelegate<_LabelButton>(AccessTools.Method("SmartMedicine.HediffRowPriorityCare:LabelButton"));
-				PriorityCareCompGet = AccessTools.MethodDelegate<_PriorityCareCompGet>(AccessTools.Method("SmartMedicine.PriorityCareComp:Get"));
-				GetCare = AccessTools.MethodDelegate<_GetCare>(AccessTools.Method("SmartMedicine.GetPawnMedicalCareCategory:GetCare"));
+                    LabelButton = AccessTools.MethodDelegate<_LabelButton>(AccessTools.Method("SmartMedicine.HediffRowPriorityCare:LabelButton"));
+                    PriorityCareCompGet = AccessTools.MethodDelegate<_PriorityCareCompGet>(AccessTools.Method("SmartMedicine.PriorityCareComp:Get"));
+                    GetCare = AccessTools.MethodDelegate<_GetCare>(AccessTools.Method("SmartMedicine.GetPawnMedicalCareCategory:GetCare"));
+                }
+                catch
+                {
+                    Log.Error("Compact hediffs - SmartMedicine patch failed.");
+                    active = false;
+                }
 			}
 		}
     }

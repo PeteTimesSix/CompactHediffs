@@ -22,7 +22,15 @@ namespace PeteTimesSix.CompactHediffs.ModCompat
 			if (active)
 			{
 				//for the record, Vectorial1024, this is really rather rude.
-				GetMaxHealth_Cached = AccessTools.MethodDelegate<_GetMaxHealth_Cached>("EBF.VanillaExtender:GetMaxHealth_Cached");
+				try
+				{
+					GetMaxHealth_Cached = AccessTools.MethodDelegate<_GetMaxHealth_Cached>("EBF.VanillaExtender:GetMaxHealth_Cached");
+				}
+				catch 
+				{
+					Log.Error("Compact hediffs - EBF patch failed.");
+					active = false;
+				}
 			}
 		}
     }

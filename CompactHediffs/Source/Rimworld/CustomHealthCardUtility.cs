@@ -437,15 +437,20 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					}
 				}
 
-				//draw Smart Medicine icon
+				//draw other mod icon
 				if (SmartMedicine.active)
 				{
 					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + SmartMedicineIconWidth), fullHediffRect.y + iconOffset, SmartMedicineIconWidth, SmartMedicineIconHeight).Rounded();
 					MedicalCareCategory defaultCare = SmartMedicine.GetCare(pawn);
 					UI_SmartMedicine.DrawSmartMedicineIcon(iconRect, defaultCare, hediffsByPriority.ToList());
 				}
+                if (ChooseYourMedicine.active)
+                {
+                    Rect iconRect = new Rect(rowRect.width - (widthAccumulator + ChooseYourMedicine.IconWidth), fullHediffRect.y + iconOffset, ChooseYourMedicine.IconWidth, ChooseYourMedicine.IconHeight).Rounded();
+                    ChooseYourMedicine.DrawButtonToAssignMedManually(iconRect, pawn, grouping);
+                }
 
-				innerY += hediffTextHeight;
+                innerY += hediffTextHeight;
 
 				if (settings.severityBarMode != CompactHediffs_Settings.SeverityBarMode.Off && settings.severityBarsPosition == CompactHediffs_Settings.BarPosition.Below)
 				{
@@ -578,9 +583,14 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				{
 					iconsWidth += SmartMedicineIconWidth;
 					count++;
-				}
-			}
-			return iconsWidth;
+                }
+                if (ChooseYourMedicine.active)
+                {
+                    iconsWidth += ChooseYourMedicine.IconWidth;
+                    count++;
+                }
+            }
+            return iconsWidth;
 		}
 
 		private static string GenLabelForHediffGroup(IGrouping<HediffDef, Hediff> grouping)
