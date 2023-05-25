@@ -17,7 +17,7 @@ namespace PeteTimesSix.CompactHediffs.ModCompat
         public static readonly int IconWidth = 16;
         public static readonly int IconHeight = 16;
 
-        public delegate float _DrawButtonToAssignMedManually(Rect rect, Pawn pawn, IGrouping<HediffDef, Hediff> grouping);
+        public delegate void _DrawButtonToAssignMedManually(Rect rect, Pawn pawn, IGrouping<HediffDef, Hediff> grouping);
         public static _DrawButtonToAssignMedManually DrawButtonToAssignMedManually;
 
         static ChooseYourMedicine()
