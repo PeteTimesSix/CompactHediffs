@@ -46,6 +46,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
         public static readonly Texture2D Bar_Infected = ContentFinder<Texture2D>.Get("bars/infected", true);
         public static readonly Texture2D Bar_DNA = ContentFinder<Texture2D>.Get("bars/dnatwist", true);
         public static readonly Texture2D Bar_Malnutrition = ContentFinder<Texture2D>.Get("bars/malnutrition", true);
+        public static readonly Texture2D Bar_Cubes = ContentFinder<Texture2D>.Get("bars/cubes", true);
 
         static Textures()
         {
@@ -55,6 +56,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
             Bar_Infected.wrapMode = TextureWrapMode.Repeat;
             Bar_DNA.wrapMode = TextureWrapMode.Repeat;
             Bar_Malnutrition.wrapMode = TextureWrapMode.Repeat;
+            Bar_Cubes.wrapMode = TextureWrapMode.Repeat;
         }
     }
 }

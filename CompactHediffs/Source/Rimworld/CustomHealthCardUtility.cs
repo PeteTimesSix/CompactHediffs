@@ -367,7 +367,7 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 				{
 					Rect iconRect = new Rect(rowRect.width - DevRemoveButtonWidth, fullHediffRect.y + iconOffset, DevRemoveButtonWidth, DevRemoveButtonWidth).Rounded();
 					TooltipHandler.TipRegion(iconRect, () => "DEV: Remove hediff", 1071045645);
-					if (GUI.Button(iconRect, TexButton.DeleteX))
+					if (GUI.Button(iconRect, TexButton.Delete))
 					{
 						foreach(var hediff in grouping)
 							pawn.health.RemoveHediff(hediff);
@@ -819,6 +819,11 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 					commonTexture = Textures.Bar_Malnutrition;
 					severityTexture = Textures.Bar_Malnutrition;
 				}
+				else if(ModsConfig.AnomalyActive && (hediff.def == HediffDefOf.CubeComa || hediff.def == HediffDefOf.CubeInterest || hediff.def == HediffDefOf.CubeRage || hediff.def == HediffDefOf.CubeWithdrawal))
+				{
+                    commonTexture = Textures.Bar_Cubes;
+                    severityTexture = Textures.Bar_Cubes;
+                }
 				else if (Pawnmorpher.active && Pawnmorpher.pawnmorpherHediffDefs.Contains(hediff.def))
 				{
 					commonTexture = Textures.Bar_DNA;
