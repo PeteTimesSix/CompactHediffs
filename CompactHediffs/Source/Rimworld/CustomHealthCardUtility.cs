@@ -362,23 +362,52 @@ namespace PeteTimesSix.CompactHediffs.Rimworld
 
 				int iconOffset = (int)Math.Max((fullHediffRect.height - IconHeight) / 2f, 0);
 
-				//draw dev remove button
+				//draw dev buttons
 				if (DebugSettings.godMode && Current.ProgramState == ProgramState.Playing)
 				{
-					Rect iconRect = new Rect(rowRect.width - DevRemoveButtonWidth, fullHediffRect.y + iconOffset, DevRemoveButtonWidth, DevRemoveButtonWidth).Rounded();
-					TooltipHandler.TipRegion(iconRect, () => "DEV: Remove hediff", 1071045645);
-					if (GUI.Button(iconRect, TexButton.Delete))
+                    {
+                        Rect iconRect = new Rect(rowRect.width - DevRemoveButtonWidth, fullHediffRect.y + iconOffset, DevRemoveButtonWidth, DevRemoveButtonWidth).Rounded();
+                        TooltipHandler.TipRegion(iconRect, () => "DEV: Remove hediff", 1071045645);
+                        GUI.color = Color.red;
+                        if (GUI.Button(iconRect, TexButton.Delete))
+                        {
+                            foreach (var hediff in grouping)
+                                pawn.health.RemoveHediff(hediff);
+                        }
+                        widthAccumulator += iconRect.width;
+                    }
+					if(grouping.Count() == 1)
 					{
-						foreach(var hediff in grouping)
-							pawn.health.RemoveHediff(hediff);
-					}
-					widthAccumulator += iconRect.width;
-				}
+                        var singleHediff = grouping.First();
+                        if (singleHediff.def.maxSeverity < float.MaxValue || singleHediff.def.lethalSeverity > 0f)
+                        {
+                            Rect iconRect = new Rect(rowRect.width - (widthAccumulator + DevRemoveButtonWidth), fullHediffRect.y + iconOffset, DevRemoveButtonWidth, DevRemoveButtonWidth).Rounded();
+                            GUI.color = Color.cyan;
+                            TooltipHandler.TipRegion(iconRect, () => "DEV: Set severity", 2131648723);
+                            if (GUI.Button(iconRect, TexButton.Save))
+                            {
+                                Find.WindowStack.Add(new Dialog_DebugSetSeverity(singleHediff));
+                            }
+                            widthAccumulator += iconRect.width;
+                        }
+                        if (singleHediff.TryGetComp<HediffComp_Disappears>() != null)
+                        {
+                            Rect iconRect = new Rect(rowRect.width - (widthAccumulator + DevRemoveButtonWidth), fullHediffRect.y + iconOffset, DevRemoveButtonWidth, DevRemoveButtonWidth).Rounded();
+                            GUI.color = Color.yellow;
+                            TooltipHandler.TipRegion(iconRect, () => "DEV: Set remaining time", 6234623);
+                            if (GUI.Button(iconRect, TexButton.Save))
+                            {
+                                Find.WindowStack.Add(new Dialog_DebugSetHediffRemaining(singleHediff));
+                            }
+                            widthAccumulator += iconRect.width;
+                        }
+                    }
+                }
 
-
-				//draw info button
-				{
-					Rect iconRect = new Rect(rowRect.width - (widthAccumulator + (IconHeight / 2f)), fullHediffRect.y + iconOffset, IconHeight / 2f, IconHeight).Rounded();
+                //draw info button
+                {
+                    GUI.color = Color.white;
+                    Rect iconRect = new Rect(rowRect.width - (widthAccumulator + (IconHeight / 2f)), fullHediffRect.y + iconOffset, IconHeight / 2f, IconHeight).Rounded();
 					CustomInfoCardButtonWidget.CustomInfoCardButton(iconRect, representativeHediff);
 					widthAccumulator += iconRect.width;
 				}
